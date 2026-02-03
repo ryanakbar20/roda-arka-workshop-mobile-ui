@@ -7,7 +7,13 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "gen:types": "npx supabase gen types typescript --project-id ugwcpnfcwovhimrnsgzj --schema public > src/lib/supabase-types.ts"
+    "gen:types": "npx supabase gen types typescript --project-id ugwcpnfcwovhimrnsgzj --schema public > src/lib/supabase-types.ts",
+    "build:android": "eas build --platform android --profile preview",
+    "build:ios": "eas build --platform ios --profile preview",
+    "build:web": "eas build --platform web --profile preview",
+    "build:android:production": "eas build --platform android --profile production",
+    "build:ios:production": "eas build --platform ios --profile production",
+    "build:web:production": "eas build --platform web --profile production"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
