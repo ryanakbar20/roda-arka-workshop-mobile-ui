@@ -4,7 +4,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { supabase } from "../../../lib/supabase";
 import { Button } from "../../../components/ui/Button";
-import { ChevronLeft, User, Car, Calendar, Check, X, Tag } from "lucide-react-native";
+import { ChevronLeft, User, Calendar, Car, Tag } from "lucide-react-native";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/Card";
 import dayjs from "../../../lib/dayjs";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { HomeStackParamList } from "../../../navigation/types";
@@ -200,135 +201,155 @@ export default function BookingDetailScreen() {
         <Text className="text-lg font-bold ml-2 text-foreground">Booking Request</Text>
       </View>
 
-      <ScrollView contentContainerClassName="p-6 pb-20">
+      <ScrollView contentContainerClassName="p-6 pb-20" showsVerticalScrollIndicator={false}>
         
         {/* Status Badge */}
-        <View className="flex-row justify-center mb-6">
+        <View className="flex-row justify-center mb-8">
              <View className={cn("px-4 py-1.5 rounded-full", getStatusColor(booking.status).split(" ")[0])}>
-                 <Text className={cn("font-bold capitalize", getStatusColor(booking.status).split(" ")[1])}>
+                 <Text className={cn("font-bold capitalize text-sm", getStatusColor(booking.status).split(" ")[1])}>
                      {booking.status === 'accepted' ? 'In Progress' : booking.status.replace('_', ' ')}
                  </Text>
             </View>
         </View>
 
-        {/* Customer & Vehicle */}
-        <View className="bg-card border border-border rounded-xl p-4 shadow-sm mb-6 space-y-4">
-            <View className="flex-row items-start">
-                <User size={20} className="text-muted-foreground mr-3 mt-0.5" />
-                <View>
-                    <Text className="text-sm text-muted-foreground uppercase">Customer</Text>
-                    <Text className="text-base font-semibold text-foreground">{customerName}</Text>
-                    <Text className="text-sm text-muted-foreground">{phone}</Text>
+        {/* Info Sections */}
+        <Card className="mb-6 overflow-hidden">
+            <CardContent className="p-0">
+                <View className="flex-row items-center p-4 border-b border-border/40">
+                    <View className="h-10 w-10 bg-primary/10 rounded-xl items-center justify-center mr-4">
+                        <User size={20} className="text-primary" />
+                    </View>
+                    <View className="flex-1">
+                        <Text className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider mb-0.5">Customer</Text>
+                        <Text className="text-base font-bold text-foreground">{customerName}</Text>
+                        <Text className="text-xs text-muted-foreground">{phone}</Text>
+                    </View>
                 </View>
-            </View>
-            <View className="h-[1px] bg-border/50" />
-            <View className="flex-row items-start">
-                <Car size={20} className="text-muted-foreground mr-3 mt-0.5" />
-                <View>
-                    <Text className="text-sm text-muted-foreground uppercase">Vehicle</Text>
-                    <Text className="text-base font-semibold text-foreground">{vehicleInfo}</Text>
+
+                <View className="flex-row items-center p-4 border-b border-border/40">
+                    <View className="h-10 w-10 bg-blue-100 rounded-xl items-center justify-center mr-4">
+                        <Car size={20} className="text-blue-600" />
+                    </View>
+                    <View className="flex-1">
+                        <Text className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider mb-0.5">Vehicle</Text>
+                        <Text className="text-base font-bold text-foreground">{vehicleInfo}</Text>
+                    </View>
                 </View>
-            </View>
-             <View className="h-[1px] bg-border/50" />
-            <View className="flex-row items-start">
-                <Calendar size={20} className="text-muted-foreground mr-3 mt-0.5" />
-                <View>
-                    <Text className="text-sm text-muted-foreground uppercase">Requested Time</Text>
-                    <Text className="text-base text-foreground">
-                        {dayjs(booking.booking_date).format("D MMM YYYY")}, {booking.booking_time}
-                    </Text>
+
+                <View className="flex-row items-center p-4">
+                    <View className="h-10 w-10 bg-orange-100 rounded-xl items-center justify-center mr-4">
+                        <Calendar size={20} className="text-orange-600" />
+                    </View>
+                    <View className="flex-1">
+                        <Text className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider mb-0.5">Requested Time</Text>
+                        <Text className="text-base font-bold text-foreground">
+                            {dayjs(booking.booking_date).format("D MMM YYYY")}, {booking.booking_time}
+                        </Text>
+                    </View>
                 </View>
-            </View>
-        </View>
+            </CardContent>
+        </Card>
 
         {/* Complaint */}
-        <View className="mb-6">
-            <Text className="text-base font-semibold mb-2 text-foreground">Complaint / Notes</Text>
-            <View className="bg-muted/30 p-4 rounded-lg border border-border/50">
-                <Text className="text-foreground">{booking.notes || "No notes provided."}</Text>
-            </View>
-        </View>
+        <Card className="mb-6">
+            <CardHeader className="pb-2">
+                <CardTitle className="text-base">Complaint / Notes</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <View className="bg-muted/30 p-4 rounded-xl border border-border/50">
+                    <Text className="text-foreground leading-5">{booking.notes || "No notes provided."}</Text>
+                </View>
+            </CardContent>
+        </Card>
 
-        {/* Selected Services (if any) */}
-         <View className="mb-8">
-            <Text className="text-base font-semibold mb-2 text-foreground">Requested Services</Text>
-             <View className="bg-card border border-border rounded-xl overflow-hidden p-4">
+        {/* Selected Services */}
+         <Card className="mb-8">
+            <CardHeader className="pb-2">
+                <CardTitle className="text-base">Requested Services</CardTitle>
+            </CardHeader>
+             <CardContent>
                  {items.length === 0 ? (
                      <Text className="text-muted-foreground italic">No specific services selected.</Text>
                  ) : (
-                     items.map((item: any, idx) => {
-                          const serviceName = typeof item === 'string' ? item : (item.name || item.service_name || "Unknown Service");
-                          const servicePrice = item.price ? Number(item.price) : 0;
-                          return (
-                              <View key={idx} className="flex-row justify-between mb-1">
-                                <Text className="text-foreground">• {serviceName}</Text>
-                                {servicePrice > 0 && (
-                                    <Text className="text-muted-foreground text-sm">
-                                        {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(servicePrice)}
-                                    </Text>
-                                )}
-                              </View>
-                          );
-                      })
-                  )}
-             </View>
-             
-             {estimatedPrice > 0 && (
-                <View className="flex-row justify-between items-center mt-3 bg-muted/30 p-3 rounded-lg border border-border/50">
-                    <View className="flex-row items-center">
-                        <Tag size={18} className="text-muted-foreground mr-2" />
-                        <Text className="text-sm font-medium text-foreground">Estimated Price</Text>
+                    <View className="bg-muted/20 rounded-xl overflow-hidden">
+                        {items.map((item: any, idx) => {
+                            const serviceName = typeof item === 'string' ? item : (item.name || item.service_name || "Unknown Service");
+                            const servicePrice = item.price ? Number(item.price) : 0;
+                            return (
+                                <View key={idx} className={cn("flex-row justify-between p-3", idx !== items.length - 1 && "border-b border-border/20")}>
+                                    <Text className="text-foreground font-medium">{serviceName}</Text>
+                                    {servicePrice > 0 && (
+                                        <Text className="text-primary font-bold">
+                                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(servicePrice)}
+                                        </Text>
+                                    )}
+                                </View>
+                            );
+                        })}
                     </View>
-                    <Text className="text-lg font-bold text-primary">
-                        {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(estimatedPrice)}
-                    </Text>
-                </View>
-             )}
-         </View>
+                  )}
+                  
+                  {estimatedPrice > 0 && (
+                     <View className="flex-row justify-between items-center mt-4 pt-4 border-t border-border/50">
+                         <View className="flex-row items-center">
+                             <Tag size={18} className="text-muted-foreground mr-2" />
+                             <Text className="font-semibold text-foreground">Total Estimate</Text>
+                         </View>
+                         <Text className="text-xl font-black text-primary">
+                             {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(estimatedPrice)}
+                         </Text>
+                     </View>
+                  )}
+             </CardContent>
+         </Card>
 
         {/* Actions */}
         {booking.status === 'pending' && (
-            <View className="flex-row space-x-4">
+            <View className="flex-row gap-4">
                 <View className="flex-1">
                     <Button 
                         label="Reject" 
-                        variant="destructive"
+                        variant="outline"
                         onPress={() => handleAction('rejected')} 
                         loading={processing}
-                    />
+                        className="border-destructive/30"
+                    >
+                        <Text className="text-destructive font-bold">Reject</Text>
+                    </Button>
                 </View>
                 <View className="flex-1">
                      <Button 
-                        label="Accept" 
+                        label="Accept Request" 
                         onPress={() => handleAction('accepted')} 
                         loading={processing}
-                        className="bg-green-600"
                     />
                 </View>
             </View>
         )}
 
         {['accepted', 'in_progress'].includes(booking.status) && (
-            <View className="flex-row space-x-4">
+            <View className="flex-row gap-4">
                 <View className="flex-1">
                     <Button 
-                        label="Cancel Service" 
-                        variant="destructive"
+                        label="Cancel" 
+                        variant="ghost"
                         onPress={() => handleAction('cancelled')} 
                         loading={processing}
-                    />
+                        className="bg-red-50"
+                    >
+                        <Text className="text-red-600 font-bold">Cancel</Text>
+                    </Button>
                 </View>
                 <View className="flex-1">
                      <Button 
                         label="Mark as Complete" 
                         onPress={() => handleAction('completed')} 
                         loading={processing}
-                        className="bg-green-600"
+                        className="bg-green-600 border-green-600"
                     />
                 </View>
             </View>
         )}
-
       </ScrollView>
 
     </SafeAreaView>

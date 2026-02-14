@@ -61,8 +61,8 @@ const specialistOptions = [
 
 const provinceOptions = regionsData.map(p => ({ label: p.name, value: p.name }));
 
-export default function RegisterScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
+export default function RegisterScreen({ navigation }: { navigation: NativeStackNavigationProp<AuthStackParamList> }) {
+  // const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const [loading, setLoading] = useState(false);
   const [registrationStep, setRegistrationStep] = useState<string>("");
   const [showSuccess, setShowSuccess] = useState(false);
@@ -278,7 +278,7 @@ export default function RegisterScreen() {
 
   if (showSuccess) {
     return (
-      <SafeAreaView className="flex-1 bg-background items-center justify-center px-6">
+      <SafeAreaView style={{ flex: 1, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
         <CheckCircle2 size={80} className="text-green-600 mb-6" />
         <Text className="text-2xl font-bold text-foreground mb-2">Check Your Email!</Text>
         <Text className="text-center text-muted-foreground mb-8 px-4">
@@ -304,7 +304,7 @@ export default function RegisterScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
       <View className="px-4 py-2 border-b border-border/50 flex-row items-center justify-between">
         <View className="flex-row items-center">
           <TouchableOpacity onPress={() => currentStep === 2 ? prevStep() : navigation.goBack()} className="p-2 -ml-2" disabled={loading}>
@@ -318,8 +318,9 @@ export default function RegisterScreen() {
       </View>
 
       <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
         className="flex-1"
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
         <ScrollView contentContainerClassName="p-6 pb-20">
           {renderStepIndicator()}

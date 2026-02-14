@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, Alert, ActivityIndicator, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, Alert, ActivityIndicator, TouchableOpacity, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useForm, Controller } from "react-hook-form";
@@ -63,6 +63,10 @@ export default function InputCapacityScreen() {
     try {
       setSaving(true);
       const workshopId = await getWorkshopId();
+      if (!workshopId) {
+        Alert.alert("Error", "Workshop identification failed");
+        return;
+      }
       
       const { error } = await supabase
         .from("workshops")
@@ -94,30 +98,35 @@ export default function InputCapacityScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <View className="px-6 py-4 border-b border-border/50 flex-row items-center space-x-4">
-        <TouchableOpacity onPress={() => navigation.goBack()} className="p-2 rounded-full active:bg-muted/10">
+    <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
+      <View className="px-6 py-4 flex-row items-center">
+        <TouchableOpacity onPress={() => navigation.goBack()} className="p-2 -ml-2 rounded-full active:bg-muted/10">
           <ChevronLeft size={24} className="text-foreground" />
         </TouchableOpacity>
-        <Text className="text-xl font-semibold text-foreground">Capacity Planning</Text>
+        <Text className="text-xl font-bold text-foreground ml-2">Capacity Planning</Text>
       </View>
 
-      <ScrollView contentContainerClassName="p-6">
-        <Text className="text-muted-foreground mb-6">
-          Manage your daily service limits for cars and motorcycles.
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
+        className="flex-1"
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      >
+        <ScrollView contentContainerClassName="p-6 pb-12">
+        <Text className="text-sm text-muted-foreground mb-8">
+            Define how many vehicles your workshop can handle daily to prevent overbooking.
         </Text>
 
-        <View className="gap-6">
+        <View className="space-y-6">
             {/* Car Capacity Card */}
-          <Card className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-200/50">
+          <Card className="bg-blue-50/40 dark:bg-blue-900/5 border-blue-100 rounded-[24px] overflow-hidden">
             <CardContent className="p-6">
-              <View className="flex-row items-center gap-4 mb-4">
-                <View className="p-3 bg-blue-100 rounded-xl">
+              <View className="flex-row items-center gap-4 mb-6">
+                <View className="h-12 w-12 bg-blue-100 rounded-2xl items-center justify-center shadow-sm shadow-blue-200/50">
                   <Car size={24} className="text-blue-600" />
                 </View>
-                <View>
-                  <Text className="text-lg font-semibold text-foreground">Car Capacity</Text>
-                  <Text className="text-sm text-muted-foreground">Daily limit for cars</Text>
+                <View className="flex-1">
+                  <Text className="text-lg font-bold text-foreground">Cars</Text>
+                  <Text className="text-xs text-muted-foreground">Maximum daily bookings</Text>
                 </View>
               </View>
 
@@ -131,7 +140,7 @@ export default function InputCapacityScreen() {
                     value={value?.toString()}
                     onChangeText={onChange}
                     error={errors.capacity_mobil?.message}
-                    className="bg-background"
+                    className="bg-card h-12 rounded-xl text-lg font-bold"
                   />
                 )}
               />
@@ -139,15 +148,15 @@ export default function InputCapacityScreen() {
           </Card>
 
           {/* Motorcycle Capacity Card */}
-          <Card className="bg-orange-50/50 dark:bg-orange-900/10 border-orange-200/50">
+          <Card className="bg-orange-50/40 dark:bg-orange-900/5 border-orange-100 rounded-[24px] overflow-hidden">
             <CardContent className="p-6">
-              <View className="flex-row items-center gap-4 mb-4">
-                <View className="p-3 bg-orange-100 rounded-xl">
+              <View className="flex-row items-center gap-4 mb-6">
+                <View className="h-12 w-12 bg-orange-100 rounded-2xl items-center justify-center shadow-sm shadow-orange-200/50">
                   <Rocket size={24} className="text-orange-600" />
                 </View>
-                <View>
-                  <Text className="text-lg font-semibold text-foreground">Motorcycle Capacity</Text>
-                  <Text className="text-sm text-muted-foreground">Daily limit for motorcycles</Text>
+                <View className="flex-1">
+                  <Text className="text-lg font-bold text-foreground">Motorcycles</Text>
+                  <Text className="text-xs text-muted-foreground">Maximum daily bookings</Text>
                 </View>
               </View>
 
@@ -161,7 +170,7 @@ export default function InputCapacityScreen() {
                     value={value?.toString()}
                     onChangeText={onChange}
                     error={errors.capacity_motor?.message}
-                    className="bg-background"
+                    className="bg-card h-12 rounded-xl text-lg font-bold"
                   />
                 )}
               />
@@ -169,15 +178,22 @@ export default function InputCapacityScreen() {
           </Card>
 
           <Button 
-            className="mt-4" 
+            className="mt-4 rounded-2xl shadow-sm shadow-primary/20" 
             size="lg" 
             onPress={handleSubmit(onSubmit)}
             loading={saving}
-          >
-            <Text className="text-primary-foreground font-semibold">Save Changes</Text>
-          </Button>
+            label="Save Capacity Limits"
+          />
+
+          <View className="bg-muted/30 p-4 rounded-2xl flex-row items-start mt-4">
+              <Text className="text-[11px] text-muted-foreground leading-4">
+                  <Text className="font-bold">Pro Tip: </Text>
+                  Keep your capacity updated based on available mechanics to ensure high-quality service and customer satisfaction.
+              </Text>
+          </View>
         </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

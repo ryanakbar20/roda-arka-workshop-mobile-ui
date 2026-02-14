@@ -9,6 +9,7 @@ import { supabase } from "../../../lib/supabase";
 import { Input } from "../../../components/ui/Input";
 import { Button } from "../../../components/ui/Button";
 import { SelectInput } from "../../../components/ui/SelectInput";
+import { Card, CardContent } from "../../../components/ui/Card";
 import { ChevronLeft, Trash2 } from "lucide-react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { HomeStackParamList } from "../../../navigation/types";
@@ -25,7 +26,7 @@ const editServiceSchema = z.object({
   model: z.string().min(1, "Model required"),
   plate: z.string().min(3, "Plate required"),
   complaint: z.string().optional(),
-  items: z.array(itemSchema).optional(),
+  items: z.array(itemSchema),
 });
 
 type EditServiceSchema = z.infer<typeof editServiceSchema>;
@@ -49,7 +50,7 @@ export default function EditServiceScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm<EditServiceSchema>({
-    resolver: zodResolver(editServiceSchema),
+    resolver: zodResolver(editServiceSchema) as any,
     defaultValues: {
       items: [],
       customerName: "",
@@ -58,7 +59,7 @@ export default function EditServiceScreen() {
       model: "",
       plate: "",
       complaint: "",
-    } as any,
+    },
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -103,8 +104,10 @@ export default function EditServiceScreen() {
 
         let items: any[] = [];
 
-        if (!data.profiles && data.service_details?.offline_data) {
-            const od = data.service_details.offline_data;
+        const serviceDetails = data.service_details as any;
+
+        if (!data.profiles && serviceDetails?.offline_data) {
+            const od = serviceDetails.offline_data;
             customerName = od.customer_name || "";
             phone = od.phone || "";
             plate = od.plate || "";
@@ -112,10 +115,10 @@ export default function EditServiceScreen() {
             model = od.model || "";
         }
 
-        if (data.service_details?.items && Array.isArray(data.service_details.items)) {
-            items = data.service_details.items;
-        } else if (Array.isArray(data.service_details)) {
-            items = data.service_details;
+        if (serviceDetails?.items && Array.isArray(serviceDetails.items)) {
+            items = serviceDetails.items;
+        } else if (Array.isArray(serviceDetails)) {
+            items = serviceDetails;
         }
 
         reset({
@@ -182,182 +185,224 @@ export default function EditServiceScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-      <View className="px-4 py-2 border-b border-border/50 flex-row items-center bg-background z-10">
-        <TouchableOpacity onPress={() => navigation.goBack()} className="p-2 -ml-2">
+    <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
+      <View className="px-6 py-4 flex-row items-center bg-background">
+        <TouchableOpacity onPress={() => navigation.goBack()} className="p-2 -ml-2 rounded-full active:bg-muted/10">
             <ChevronLeft size={24} className="text-foreground" />
         </TouchableOpacity>
-        <Text className="text-lg font-bold ml-2 text-foreground">Edit Service</Text>
+        <Text className="text-xl font-bold ml-2 text-foreground">Edit Booking Details</Text>
       </View>
 
       <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
         className="flex-1"
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
-        <ScrollView contentContainerClassName="p-6 pb-20">
-          
+        <ScrollView 
+          contentContainerClassName="p-6 pb-24"
+          showsVerticalScrollIndicator={false}
+        >
           {/* Customer Info */}
-          <View className="mb-6">
-            <Text className="text-base font-semibold mb-4 text-primary">Customer Information</Text>
-            <Controller
-              control={control}
-              name="customerName"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                    label="Customer Name"
-                    placeholder="John Doe"
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    value={value}
-                    error={errors.customerName?.message}
-                    containerClassName="mb-3"
-                />
-              )}
-            />
-            <Controller
-              control={control}
-              name="phone"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                    label="Phone Number"
-                    placeholder="0812..."
-                    keyboardType="phone-pad"
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    value={value}
-                    error={errors.phone?.message}
-                    containerClassName="mb-3"
-                />
-              )}
-            />
+          <View className="mb-8">
+            <Text className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 ml-1">Customer Information</Text>
+            <Card className="rounded-[24px] border-border/40 shadow-sm shadow-black/5 overflow-hidden">
+                <CardContent className="p-5">
+                    <Controller
+                    control={control}
+                    name="customerName"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                        <Input
+                            label="Customer Name"
+                            placeholder="John Doe"
+                            onBlur={onBlur}
+                            onChangeText={onChange}
+                            value={value}
+                            error={errors.customerName?.message}
+                            containerClassName="mb-6"
+                        />
+                    )}
+                    />
+                    <Controller
+                    control={control}
+                    name="phone"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                        <Input
+                            label="Phone Number"
+                            placeholder="0812..."
+                            keyboardType="phone-pad"
+                            onBlur={onBlur}
+                            onChangeText={onChange}
+                            value={value}
+                            error={errors.phone?.message}
+                            containerClassName="mb-0"
+                        />
+                    )}
+                    />
+                </CardContent>
+            </Card>
           </View>
 
           {/* Vehicle Info */}
-          <View className="mb-6">
-            <Text className="text-base font-semibold mb-4 text-primary">Vehicle Information</Text>
-            <Controller
-                control={control}
-                name="brand"
-                render={({ field: { onChange, value } }) => (
-                <SelectInput
-                    label="Brand"
-                    placeholder="Select Brand"
-                    options={brandOptions}
-                    value={value}
-                    onChange={onChange}
-                    error={errors.brand?.message}
-                />
-                )}
-            />
-            <View className="h-3" />
-            <Controller
-              control={control}
-              name="model"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                    label="Model"
-                    placeholder="Avanza, Civic, etc."
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    value={value}
-                    error={errors.model?.message}
-                    containerClassName="mb-3"
-                />
-              )}
-            />
-            <Controller
-              control={control}
-              name="plate"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                    label="License Plate"
-                    placeholder="B 1234 ABC"
-                    autoCapitalize="characters"
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    value={value}
-                    error={errors.plate?.message}
-                    containerClassName="mb-3"
-                />
-              )}
-            />
+          <View className="mb-8">
+            <Text className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 ml-1">Vehicle Information</Text>
+            <Card className="rounded-[24px] border-border/40 shadow-sm shadow-black/5 overflow-hidden">
+                <CardContent className="p-5">
+                    <Controller
+                        control={control}
+                        name="brand"
+                        render={({ field: { onChange, value } }) => (
+                        <SelectInput
+                            label="Brand"
+                            placeholder="Select Brand"
+                            options={brandOptions}
+                            value={value}
+                            onChange={onChange}
+                            error={errors.brand?.message}
+                            containerClassName="mb-6"
+                        />
+                        )}
+                    />
+                    <Controller
+                    control={control}
+                    name="model"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                        <Input
+                            label="Model"
+                            placeholder="Avanza, Civic, etc."
+                            onBlur={onBlur}
+                            onChangeText={onChange}
+                            value={value}
+                            error={errors.model?.message}
+                            containerClassName="mb-6"
+                        />
+                    )}
+                    />
+                    <Controller
+                    control={control}
+                    name="plate"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                        <Input
+                            label="License Plate"
+                            placeholder="B 1234 ABC"
+                            autoCapitalize="characters"
+                            onBlur={onBlur}
+                            onChangeText={onChange}
+                            value={value}
+                            error={errors.plate?.message}
+                            containerClassName="mb-0"
+                        />
+                    )}
+                    />
+                </CardContent>
+            </Card>
           </View>
 
            {/* Complaint */}
-           <View className="mb-6">
-            <Text className="text-base font-semibold mb-4 text-primary">Complaint / Notes</Text>
-            <Controller
-              control={control}
-              name="complaint"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                    placeholder="Describe the issue..."
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    value={value}
-                    multiline
-                    numberOfLines={3}
-                    className="h-24 py-2"
-                    textAlignVertical="top"
-                />
-              )}
-            />
+           <View className="mb-8">
+            <Text className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 ml-1">Booking Notes / Complaint</Text>
+            <Card className="rounded-[24px] border-border/40 shadow-sm shadow-black/5 overflow-hidden">
+                <CardContent className="p-5">
+                    <Controller
+                    control={control}
+                    name="complaint"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                        <Input
+                            placeholder="Describe the issue or any special requests..."
+                            onBlur={onBlur}
+                            onChangeText={onChange}
+                            value={value}
+                            multiline
+                            numberOfLines={4}
+                            className="h-28 py-3"
+                            textAlignVertical="top"
+                            containerClassName="mb-0"
+                        />
+                    )}
+                    />
+                </CardContent>
+            </Card>
           </View>
 
           {/* Service Items */}
-          <View className="mb-6">
-            <View className="flex-row justify-between items-center mb-4">
-                <Text className="text-base font-semibold text-primary">Service Items</Text>
-                <TouchableOpacity onPress={() => append({ name: "", price: 0 })}>
-                    <Text className="text-primary font-bold">+ Add Item</Text>
+          <View className="mb-8">
+            <View className="flex-row justify-between items-center mb-3 px-1">
+                <Text className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Service Items & Pricing</Text>
+                <TouchableOpacity 
+                    onPress={() => append({ name: "", price: 0 })}
+                    className="bg-primary/10 px-4 py-2 rounded-xl active:bg-primary/20"
+                >
+                    <Text className="text-primary font-bold text-xs">+ Add Item</Text>
                 </TouchableOpacity>
             </View>
 
             {fields.map((field, index) => (
-                <View key={field.id} className="flex-row items-start mb-3 space-x-2">
-                    <View className="flex-1">
-                        <Controller
-                            control={control}
-                            name={`items.${index}.name`}
-                            render={({ field: { onChange, value } }) => (
-                                <Input
-                                    placeholder="Item Name"
-                                    onChangeText={onChange}
-                                    value={value}
+                <Card key={field.id} className="mb-4 rounded-[24px] border-border/40 shadow-sm shadow-black/5 overflow-hidden">
+                    <CardContent className="p-5">
+                        <View className="flex-row items-start gap-4">
+                            <View className="flex-1">
+                                <Controller
+                                    control={control}
+                                    name={`items.${index}.name`}
+                                    render={({ field: { onChange, value } }) => (
+                                        <Input
+                                            label="Item Name"
+                                            placeholder="Service or part name"
+                                            onChangeText={onChange}
+                                            value={value}
+                                            containerClassName="mb-6"
+                                        />
+                                    )}
                                 />
-                            )}
-                        />
-                    </View>
-                    <View className="w-24">
-                         <Controller
-                            control={control}
-                            name={`items.${index}.price`}
-                            render={({ field: { onChange, value } }) => (
-                                <Input
-                                    placeholder="Price"
-                                    keyboardType="numeric"
-                                    onChangeText={onChange}
-                                    value={value?.toString()}
+                                <Controller
+                                    control={control}
+                                    name={`items.${index}.price`}
+                                    render={({ field: { onChange, value } }) => (
+                                        <Input
+                                            label="Item Price (Rp)"
+                                            placeholder="0"
+                                            keyboardType="numeric"
+                                            onChangeText={onChange}
+                                            value={value?.toString()}
+                                            containerClassName="mb-0"
+                                            className="font-bold text-primary"
+                                        />
+                                    )}
                                 />
-                            )}
-                        />
-                    </View>
-                    <TouchableOpacity onPress={() => remove(index)} className="mt-3">
-                        <Trash2 size={20} className="text-destructive" />
-                    </TouchableOpacity>
-                </View>
+                            </View>
+                            <TouchableOpacity 
+                                onPress={() => remove(index)} 
+                                className="bg-destructive/10 p-3 rounded-2xl mt-8 active:bg-destructive/20"
+                            >
+                                <Trash2 size={20} className="text-destructive" />
+                            </TouchableOpacity>
+                        </View>
+                    </CardContent>
+                </Card>
             ))}
             {fields.length === 0 && (
-                <Text className="text-muted-foreground italic text-sm">No items added yet.</Text>
+                <Card className="rounded-[24px] border-dashed border-2 border-border/60 bg-transparent">
+                    <CardContent className="p-10 items-center">
+                        <Text className="text-muted-foreground italic text-sm text-center">
+                            No service items added yet.{"\n"}Click "+ Add Item" to specify pricing.
+                        </Text>
+                    </CardContent>
+                </Card>
             )}
           </View>
 
           <Button 
-            className="mt-4"
-            label="Update Service"
-            onPress={handleSubmit(onSubmit)}
+            className="rounded-2xl shadow-sm shadow-primary/20"
+            size="lg"
+            label="Save Booking Details"
+            onPress={handleSubmit(onSubmit as any)}
             loading={submitting}
           />
+
+          <View className="mt-6 bg-muted/30 p-4 rounded-2xl flex-row items-start">
+            <Text className="text-[11px] text-muted-foreground leading-4 italic">
+                * Note: These details are shared with the customer. Ensure pricing and item names are accurate before saving.
+            </Text>
+          </View>
 
         </ScrollView>
       </KeyboardAvoidingView>

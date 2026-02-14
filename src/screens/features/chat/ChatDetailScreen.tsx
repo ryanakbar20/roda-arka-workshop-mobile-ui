@@ -1,31 +1,30 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, FlatList, TextInput, KeyboardAvoidingView, Platform, TouchableOpacity, Image, ActivityIndicator } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { View, Text, FlatList, TextInput, KeyboardAvoidingView, Platform, TouchableOpacity, Image, ActivityIndicator, Modal, ActionSheetIOS, NativeModules } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { supabase } from "../../../lib/supabase";
-import { ChevronLeft, Send, Image as ImageIcon } from "lucide-react-native";
+import { ChevronLeft, Send, Image as ImageIcon, FileText, Mic, Square, Trash2, Paperclip, X, Download as DownloadIcon, Play } from "lucide-react-native";
 import dayjs from "../../../lib/dayjs";
 import * as ImagePicker from 'expo-image-picker';
 import { HomeStackParamList } from "../../../navigation/types";
 import { cn } from "../../../lib/utils";
-import { Video, ResizeMode, Audio } from 'expo-av';
-import * as DocumentPicker from 'expo-document-picker';
+import { VideoView, useVideoPlayer } from 'expo-video';
+import { useAudioRecorder, RecordingPresets, requestRecordingPermissionsAsync } from 'expo-audio';
 import { AudioPlayer } from "../../../components/chat/AudioPlayer";
-import { FileText, Mic, Square, Trash2, Paperclip, Image as ImageIconOriginal } from "lucide-react-native";
+import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-import { Modal, ActionSheetIOS } from 'react-native';
-import { X, Download as DownloadIcon } from "lucide-react-native";
 
-// Route prop might come from ChatStackParamList actually, but treating as generic for now
-// We need to ensure we export ChatStackParamList or merge into HomeStackParamList in types.ts
 type ChatDetailRouteProp = RouteProp<HomeStackParamList, "ChatDetail">;
+
+const isVideoAvailable = !!NativeModules.ExpoVideo;
+const isAudioAvailable = !!NativeModules.ExpoAudio;
 
 export default function ChatDetailScreen() {
     const navigation = useNavigation();
     const route = useRoute<ChatDetailRouteProp>();
+    const insets = useSafeAreaInsets();
     
-    // Safety check for params
     if (!route.params) return null;
     const { chatId, customerName, avatarUrl } = route.params;
 
@@ -36,7 +35,6 @@ export default function ChatDetailScreen() {
     const flatListRef = useRef<FlatList>(null);
 
     // Voice Recording State
-    const [recording, setRecording] = useState<Audio.Recording | null>(null);
     const [isRecording, setIsRecording] = useState(false);
     const [recordingDuration, setRecordingDuration] = useState(0);
     const recordingTimer = useRef<NodeJS.Timeout | null>(null);
@@ -46,23 +44,6 @@ export default function ChatDetailScreen() {
     const [downloading, setDownloading] = useState(false);
     const [showAttachModal, setShowAttachModal] = useState(false);
 
-    const handleAttachmentPress = () => {
-        if (Platform.OS === 'ios') {
-            ActionSheetIOS.showActionSheetWithOptions(
-                {
-                    options: ['Cancel', 'Photo & Video', 'Document'],
-                    cancelButtonIndex: 0,
-                },
-                (buttonIndex) => {
-                    if (buttonIndex === 1) pickImage();
-                    if (buttonIndex === 2) pickDocument();
-                }
-            );
-        } else {
-            setShowAttachModal(true);
-        }
-    };
-
     useEffect(() => {
         fetchCurrentUser();
     }, []);
@@ -71,7 +52,7 @@ export default function ChatDetailScreen() {
         if (!userId) return;
         
         fetchMessages();
-        markAsRead(); // Mark as read when entering
+        markAsRead();
 
         const channel = supabase
             .channel(`public:messages:chat_id=eq.${chatId}`)
@@ -85,12 +66,10 @@ export default function ChatDetailScreen() {
                 },
                 (payload) => {
                     setMessages((prev) => {
-                        // Check if message already exists (deduplication for optimistic UI)
                         if (prev.find(m => m.id === payload.new.id)) return prev;
                         return [...prev, payload.new];
                     });
                     
-                    // If message is from other user, mark it as read immediately if we are viewing this screen
                     if (payload.new.sender_id !== userId) {
                         markAsRead(); 
                     }
@@ -120,8 +99,6 @@ export default function ChatDetailScreen() {
 
     const markAsRead = async () => {
         if (!userId) return;
-
-        // Mark all messages in this chat sent by others as read
         await supabase
             .from("messages")
             .update({ is_read: true })
@@ -137,7 +114,6 @@ export default function ChatDetailScreen() {
         setText("");
         setSending(true); 
 
-        // Optimistic Update
         const optimisticMessage = {
             id: 'temp-' + Date.now(),
             chat_id: chatId,
@@ -150,7 +126,6 @@ export default function ChatDetailScreen() {
         setMessages((prev) => [...prev, optimisticMessage]);
 
         try {
-             // 1. Insert message
              const { data, error: msgError } = await supabase.from("messages").insert({
                 chat_id: chatId,
                 sender_id: userId,
@@ -160,16 +135,12 @@ export default function ChatDetailScreen() {
 
             if (msgError) throw msgError;
 
-            // Replace optimistic message with real one, OR remove optimistic if realtime already added real one
             setMessages((prev) => {
                 const alreadyExists = prev.some(m => m.id === data.id);
-                if (alreadyExists) {
-                    return prev.filter(m => m.id !== optimisticMessage.id);
-                }
+                if (alreadyExists) return prev.filter(m => m.id !== optimisticMessage.id);
                 return prev.map(m => m.id === optimisticMessage.id ? data : m);
             });
 
-             // 2. Update chat last_message
              await supabase
                 .from("chats")
                 .update({
@@ -200,19 +171,17 @@ export default function ChatDetailScreen() {
     const pickDocument = async () => {
         try {
             const result = await DocumentPicker.getDocumentAsync({
-                type: '*/*', // Allow all, or specific types like 'application/pdf'
+                type: '*/*',
                 copyToCacheDirectory: true
             });
 
             if (result.assets && result.assets[0]) {
                 const asset = result.assets[0];
-                 // Determine type roughly
                  if (asset.mimeType?.startsWith('image/')) {
                      uploadMedia(asset.uri, 'image');
                  } else if (asset.mimeType?.startsWith('video/')) {
                      uploadMedia(asset.uri, 'video');
                  } else {
-                     // Treat as generic file
                      uploadMedia(asset.uri, 'file', asset.name);
                  }
             }
@@ -220,67 +189,30 @@ export default function ChatDetailScreen() {
             console.error("Document picker error", err);
         }
     };
-
-    // Voice Recording Functions
-    const startRecording = async () => {
-        try {
-            const permission = await Audio.requestPermissionsAsync();
-            if (permission.status === 'granted') {
-                await Audio.setAudioModeAsync({
-                    allowsRecordingIOS: true,
-                    playsInSilentModeIOS: true,
-                });
-
-                const { recording } = await Audio.Recording.createAsync(
-                    Audio.RecordingOptionsPresets.HIGH_QUALITY
-                );
-
-                setRecording(recording);
-                setIsRecording(true);
-                setRecordingDuration(0);
-                
-                recordingTimer.current = setInterval(() => {
-                    setRecordingDuration(d => d + 1);
-                }, 1000);
-            }
-        } catch (err) {
-            console.error('Failed to start recording', err);
+    const handleStartRecording = () => {
+        if (!isAudioAvailable) {
+            alert("Voice recording is not supported on this device/version.");
+            return;
         }
+        setIsRecording(true);
+        setRecordingDuration(0);
+        recordingTimer.current = setInterval(() => {
+            setRecordingDuration(d => d + 1);
+        }, 1000);
     };
 
-    const stopRecording = async (cancel = false) => {
-        if (!recording) return;
-
+    const handleStopRecording = async (cancel: boolean) => {
         setIsRecording(false);
-        if (recordingTimer.current) clearInterval(recordingTimer.current);
-
-        try {
-            await recording.stopAndUnloadAsync();
-        } catch (error) {
-            // minor error if already stopped
-        }
-
-        const uri = recording.getURI(); 
-        setRecording(null);
-
-        if (!cancel && uri) {
-            uploadMedia(uri, 'voice');
+        if (recordingTimer.current) {
+            clearInterval(recordingTimer.current);
+            recordingTimer.current = null;
         }
     };
+
 
     const handleDownload = async (url: string, fileName?: string) => {
         setDownloading(true);
         try {
-            if (Platform.OS === 'web') {
-                const anchor = document.createElement('a');
-                anchor.href = url;
-                anchor.download = fileName || 'download';
-                document.body.appendChild(anchor);
-                anchor.click();
-                document.body.removeChild(anchor);
-                return;
-            }
-
             const downloadResumable = FileSystem.createDownloadResumable(
                 url,
                 FileSystem.documentDirectory + (fileName || 'downloaded_file'),
@@ -313,7 +245,6 @@ export default function ChatDetailScreen() {
 
         try {
             let extension = uri.split('.').pop() || 'bin';
-             // Adjust extension for voice if needed
             if (type === 'voice' && !uri.includes('.')) extension = 'm4a';
 
             const folder = type === 'image' ? '' : (type === 'voice' ? 'audio/' : (type === 'file' ? 'documents/' : ''));
@@ -322,7 +253,6 @@ export default function ChatDetailScreen() {
                 ? `${folder}${chatId}/${timestamp}_${fileNameOverride}`
                 : `${folder}${chatId}/${timestamp}.${extension}`;
             
-            // For optimistic UI - construct a realistic looking message
             let optimisticContent = null;
             if (type === 'file') optimisticContent = fileNameOverride || 'Document';
 
@@ -332,14 +262,13 @@ export default function ChatDetailScreen() {
                 sender_id: userId,
                 content: optimisticContent,
                 message_type: type,
-                media_url: uri, // Local URI for preview
+                media_url: uri,
                 created_at: new Date().toISOString(),
                 is_read: false,
             };
             
             setMessages((prev) => [...prev, optimisticMessage]);
 
-            // Fetch blob from URI
             const response = await fetch(uri);
             const blob = await response.blob();
 
@@ -363,7 +292,6 @@ export default function ChatDetailScreen() {
 
             if (msgError) throw msgError;
 
-             // Replace optimistic message
             setMessages((prev) => {
                 const alreadyExists = prev.some(m => m.id === data.id);
                 if (alreadyExists) return prev.filter(m => m.id !== optimisticMessage.id);
@@ -386,211 +314,296 @@ export default function ChatDetailScreen() {
 
         } catch (error) {
             console.error("Upload error:", error);
-            // Remove optimistic on error
-            // setMessages...
         } finally {
             setSending(false);
         }
     };
 
+    const handleAttachmentPress = () => {
+        if (Platform.OS === 'ios') {
+            ActionSheetIOS.showActionSheetWithOptions(
+                {
+                    options: ['Cancel', 'Photo & Video', 'Document'],
+                    cancelButtonIndex: 0,
+                },
+                (buttonIndex) => {
+                    if (buttonIndex === 1) pickImage();
+                    if (buttonIndex === 2) pickDocument();
+                }
+            );
+        } else {
+            setShowAttachModal(true);
+        }
+    };
+
+    const renderMessage = ({ item }: { item: any }) => {
+        const isMe = item.sender_id === userId;
+        const isVoice = item.message_type === "voice";
+        const isImage = item.message_type === "image";
+        const isVideo = item.message_type === "video";
+        const isFile = item.message_type === "file";
+
+        return (
+            <View className={cn("mb-4 max-w-[80%]", isMe ? "self-end items-end" : "self-start items-start")}>
+                <View className={cn(
+                    "p-3 rounded-2xl shadow-sm",
+                    isMe ? "bg-primary rounded-tr-none" : "bg-card border border-border/50 rounded-tl-none"
+                )}>
+                    {isImage ? (
+                        <TouchableOpacity onPress={() => item.media_url && setViewerUrl(item.media_url)}>
+                            <Image source={{ uri: item.media_url }} className="w-48 h-48 rounded-xl bg-muted" />
+                        </TouchableOpacity>
+                    ) : isVideo ? (
+                        <VideoMessage uri={item.media_url} />
+                    ) : isFile ? (
+                        <TouchableOpacity onPress={() => handleDownload(item.media_url, item.content)} className="flex-row items-center p-1">
+                            <View className={cn("p-2 rounded-lg mr-2", isMe ? "bg-white/20" : "bg-primary/10")}>
+                                <FileText size={20} className={isMe ? "text-white" : "text-primary"} />
+                            </View>
+                            <View>
+                                <Text className={cn("text-sm font-medium", isMe ? "text-white" : "text-foreground")} numberOfLines={1}>
+                                    {item.content || "Document"}
+                                </Text>
+                                <Text className={cn("text-[10px]", isMe ? "text-white/60" : "text-muted-foreground")}>Tap to open</Text>
+                            </View>
+                        </TouchableOpacity>
+                    ) : isVoice ? (
+                        <AudioPlayer uri={item.media_url} />
+                    ) : (
+                        <Text className={cn("text-base leading-5", isMe ? "text-primary-foreground font-medium" : "text-foreground")}>
+                            {item.content}
+                        </Text>
+                    )}
+                </View>
+                <Text className="text-[10px] text-muted-foreground mt-1 px-1">
+                    {dayjs(item.created_at).format("HH:mm")}
+                </Text>
+            </View>
+        );
+    };
+
     return (
-        <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-             {/* Header */}
-            <View className="px-4 py-2 border-b border-border/50 flex-row items-center bg-background z-10 shadow-sm">
-                <TouchableOpacity onPress={() => navigation.goBack()} className="p-2 -ml-2">
+        <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
+            <View className="px-4 py-3 border-b border-border/50 flex-row items-center bg-background z-10">
+                <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3 p-1 rounded-full active:bg-muted/10">
                     <ChevronLeft size={24} className="text-foreground" />
                 </TouchableOpacity>
-                <Image 
-                    source={{ uri: avatarUrl || "https://ui-avatars.com/api/?name=" + customerName }}
-                    className="w-9 h-9 rounded-full bg-muted ml-2" 
-                />
-                <View className="ml-3">
-                    <Text className="text-base font-bold text-foreground">{customerName}</Text>
-                    <Text className="text-xs text-green-600">Active</Text>
+                <View className="h-10 w-10 bg-primary/10 rounded-xl items-center justify-center mr-3">
+                     <Text className="font-bold text-primary">{customerName?.charAt(0) || "C"}</Text>
+                </View>
+                <View className="flex-1">
+                    <Text className="text-base font-bold text-foreground leading-tight" numberOfLines={1}>
+                        {customerName || "Customer"}
+                    </Text>
+                    <View className="flex-row items-center mt-0.5">
+                        <View className="h-2 w-2 bg-green-500 rounded-full mr-1.5" />
+                        <Text className="text-[11px] text-muted-foreground">Online</Text>
+                    </View>
                 </View>
             </View>
 
             <KeyboardAvoidingView 
-                behavior={Platform.OS === "ios" ? "padding" : undefined}
+                behavior={Platform.OS === "ios" ? "padding" : "padding"}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
                 className="flex-1"
-                keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
             >
                 <FlatList
                     ref={flatListRef}
                     data={messages}
                     keyExtractor={(item) => item.id}
-                    contentContainerClassName="p-4 space-y-3"
+                    renderItem={renderMessage}
+                    contentContainerClassName="p-6"
                     onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-                    onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
-                    renderItem={({ item }) => {
-                        const isMe = item.sender_id === userId;
-                        return (
-                             <View className={cn("flex-row mb-2", isMe ? "justify-end" : "justify-start")}>
-                                <View className={cn(
-                                    "max-w-[75%] p-3 rounded-2xl", 
-                                    isMe ? "bg-primary rounded-tr-none" : "bg-card border border-border rounded-tl-none"
-                                )}>
-                                    {item.message_type === "image" && item.media_url ? (
-                                        <TouchableOpacity onPress={() => setViewerUrl(item.media_url)}>
-                                            <Image 
-                                                source={{ uri: item.media_url }} 
-                                                className="w-48 h-48 rounded-lg bg-black/10" 
-                                                resizeMode="cover"
-                                            />
-                                        </TouchableOpacity>
-                                    ) : item.message_type === "video" && item.media_url ? (
-                                        <Video
-                                            source={{ uri: item.media_url }}
-                                            style={{ width: 200, height: 200, borderRadius: 8, backgroundColor: 'black' }}
-                                            useNativeControls
-                                            resizeMode={ResizeMode.CONTAIN}
-                                            isLooping={false}
-                                        />
-                                    ) : item.message_type === "voice" && item.media_url ? (
-                                        <AudioPlayer uri={item.media_url} isPending={item.id.toString().startsWith('temp-')} />
-                                    ) : item.message_type === "file" && item.media_url ? (
-                                        <TouchableOpacity 
-                                            onPress={() => handleDownload(item.media_url!, item.content || 'document')}
-                                            className="flex-row items-center space-x-2 bg-black/5 p-2 rounded-lg"
-                                        >
-                                            <View className="p-2 bg-primary/10 rounded-lg">
-                                                <FileText size={24} className="text-primary" />
-                                            </View>
-                                            <View className="flex-1 max-w-[150px]">
-                                                <Text numberOfLines={1} className={cn("font-medium text-sm", isMe ? "text-primary-foreground" : "text-foreground")}>
-                                                    {item.content || "Document"}
-                                                </Text>
-                                                <Text className="text-[10px] text-muted-foreground uppercase">PDF / DOC</Text>
-                                            </View>
-                                            <View className="p-1">
-                                                {downloading ? (
-                                                  <ActivityIndicator size="small" color={isMe ? "white" : "black"} />
-                                                ) : (
-                                                  <DownloadIcon size={16} className="text-muted-foreground" />
-                                                )}
-                                            </View>
-                                        </TouchableOpacity>
-                                    ) : (
-                                        <Text className={cn("text-base", isMe ? "text-primary-foreground" : "text-foreground")}>
-                                            {item.content}
-                                        </Text>
-                                    )}
-                                    <Text className={cn("text-[10px] mt-1 text-right", isMe ? "text-primary-foreground/70" : "text-muted-foreground")}>
-                                        {dayjs(item.created_at).format("HH:mm")}
-                                    </Text>
-                                </View>
-                            </View>
-                        )
-                    }}
                 />
 
-                <Modal visible={!!viewerUrl} transparent={true} onRequestClose={() => setViewerUrl(null)}>
-                    <View className="flex-1 bg-black/95 justify-center items-center">
-                        <TouchableOpacity 
-                            onPress={() => setViewerUrl(null)} 
-                            className="absolute top-12 right-6 z-10 p-2 bg-white/20 rounded-full"
-                        >
-                            <X size={24} color="white" />
-                        </TouchableOpacity>
-                        
-                        {viewerUrl && (
-                             <Image 
-                                source={{ uri: viewerUrl }} 
-                                className="w-full h-full" 
-                                resizeMode="contain"
-                            />
-                        )}
-                        
-                        <TouchableOpacity 
-                             onPress={() => viewerUrl && handleDownload(viewerUrl, 'image.jpg')}
-                             className="absolute bottom-12 right-6 z-10 p-3 bg-white/20 rounded-full"
-                        >
-                             <DownloadIcon size={24} color="white" />
-                        </TouchableOpacity>
-                    </View>
-                </Modal>
-
-                {/* Attachment Modal */}
-                <Modal visible={showAttachModal} transparent={true} onRequestClose={() => setShowAttachModal(false)} animationType="fade">
-                    <TouchableOpacity 
-                        className="flex-1 bg-black/40 justify-end" 
-                        activeOpacity={1} 
-                        onPress={() => setShowAttachModal(false)}
-                    >
-                        <View className="bg-card m-4 rounded-xl overflow-hidden mb-20">
-                            <TouchableOpacity 
-                                className="p-4 flex-row items-center border-b border-border" 
-                                onPress={() => { setShowAttachModal(false); pickImage(); }}
-                            >
-                                <ImageIcon size={24} className="text-foreground mr-3" />
-                                <Text className="text-foreground text-base font-medium">Photo & Video</Text>
+                <View 
+                    style={{ paddingBottom: Math.max(insets.bottom, 16) }}
+                    className="p-4 bg-background border-t border-border/30"
+                >
+                    <View className="flex-row items-end gap-2">
+                        <View className="flex-1 flex-row items-end bg-muted/40 rounded-[24px] px-3 py-1 border border-border/40">
+                             <TouchableOpacity onPress={handleAttachmentPress} className="p-2 mr-1">
+                                <Paperclip size={22} className="text-muted-foreground" />
                             </TouchableOpacity>
-                            <TouchableOpacity 
-                                className="p-4 flex-row items-center"
-                                onPress={() => { setShowAttachModal(false); pickDocument(); }}
-                            >
-                                <FileText size={24} className="text-foreground mr-3" />
-                                <Text className="text-foreground text-base font-medium">Document</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </TouchableOpacity>
-                </Modal>
-
-                {/* Input */}
-                <View className="p-2 bg-background border-t border-border flex-row items-end space-x-2">
-                     <View className="flex-row items-end pb-2">
-                        <TouchableOpacity onPress={handleAttachmentPress} className="p-2">
-                            <Paperclip size={24} className="text-muted-foreground" />
-                        </TouchableOpacity>
-                     </View>
-
-                    {isRecording ? (
-                         <View className="flex-1 bg-red-100 rounded-2xl px-4 py-2 min-h-[44px] flex-row items-center justify-between">
-                            <View className="flex-row items-center">
-                                <View className="w-2 h-2 rounded-full bg-red-500 animate-pulse mr-2" />
-                                <Text className="text-red-600 font-medium">{formatDuration(recordingDuration)}</Text>
-                            </View>
-                            <View className="flex-row items-center space-x-3">
-                                 <TouchableOpacity onPress={() => stopRecording(true)}>
-                                    <Trash2 size={20} className="text-red-400" />
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={() => stopRecording(false)}>
-                                    <Square size={20} className="text-red-600" fill="currentColor" />
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    ) : (
-                         <View className="flex-1 bg-muted/30 border border-input rounded-2xl px-4 py-2 min-h-[44px] flex-row items-end">
                             <TextInput
-                                placeholder="Type a message..."
+                                className="flex-1 text-foreground text-sm max-h-24 min-h-[40px] py-2"
+                                placeholder="Message..."
+                                placeholderTextColor="#94a3b8"
+                                multiline
                                 value={text}
                                 onChangeText={setText}
-                                multiline
-                                className="text-foreground max-h-24 pt-2 flex-1"
                             />
-                            {!text.trim() && (
-                                <TouchableOpacity onPress={startRecording} className="p-1 ml-1">
-                                    <Mic size={20} className="text-muted-foreground" />
-                                </TouchableOpacity>
-                            )}
-                        </View>
-                    )}
-
-                    {!isRecording && (
-                        <TouchableOpacity 
-                            onPress={sendMessage} 
-                            disabled={!text.trim() && !sending}
-                            className={cn("p-2 mb-1 rounded-full", text.trim() ? "bg-primary" : "bg-muted")}
-                        >
-                             {sending ? (
-                                 <ActivityIndicator size="small" color="white" />
-                             ) : (
-                                 <Send size={20} color="white" />
+                             {!text.trim() && (
+                                <AudioRecorderWrapper 
+                                    isAudioAvailable={isAudioAvailable}
+                                    isRecording={isRecording}
+                                    onStartRecording={handleStartRecording}
+                                    onStopRecording={handleStopRecording}
+                                    onUploadMedia={(uri) => uploadMedia(uri, 'voice')}
+                                />
                              )}
-                        </TouchableOpacity>
-                    )}
+                        </View>
+                        {(text.trim().length > 0) && (
+                            <TouchableOpacity 
+                                onPress={sendMessage}
+                                className="h-11 w-11 bg-primary rounded-full items-center justify-center shadow-sm shadow-primary/20"
+                            >
+                                <Send size={20} className="text-white ml-0.5" />
+                            </TouchableOpacity>
+                        )}
+                    </View>
                 </View>
             </KeyboardAvoidingView>
+
+            <Modal visible={!!viewerUrl} transparent={true} onRequestClose={() => setViewerUrl(null)}>
+                <View className="flex-1 bg-black justify-center items-center">
+                    <TouchableOpacity 
+                        className="absolute top-12 right-6 z-10 p-2 bg-white/20 rounded-full"
+                        onPress={() => setViewerUrl(null)}
+                    >
+                        <X size={24} color="white" />
+                    </TouchableOpacity>
+                    <Image 
+                        source={{ uri: viewerUrl || "" }} 
+                        className="w-full h-full" 
+                        resizeMode="contain"
+                    />
+                </View>
+            </Modal>
+
+            {/* Android Attachment Modal */}
+            <Modal visible={showAttachModal} transparent={true} onRequestClose={() => setShowAttachModal(false)} animationType="fade">
+                <TouchableOpacity 
+                    className="flex-1 bg-black/40 justify-end" 
+                    activeOpacity={1} 
+                    onPress={() => setShowAttachModal(false)}
+                >
+                    <View className="bg-card m-4 rounded-2xl overflow-hidden mb-20 shadow-lg">
+                        <TouchableOpacity 
+                            className="p-4 flex-row items-center border-b border-border/50" 
+                            onPress={() => { setShowAttachModal(false); pickImage(); }}
+                        >
+                            <View className="h-10 w-10 bg-blue-100 rounded-xl items-center justify-center mr-4">
+                                <ImageIcon size={20} className="text-blue-600" />
+                            </View>
+                            <Text className="text-foreground text-base font-semibold">Photo & Video</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                            className="p-4 flex-row items-center"
+                            onPress={() => { setShowAttachModal(false); pickDocument(); }}
+                        >
+                            <View className="h-10 w-10 bg-orange-100 rounded-xl items-center justify-center mr-4">
+                                <FileText size={20} className="text-orange-600" />
+                            </View>
+                            <Text className="text-foreground text-base font-semibold">Document</Text>
+                        </TouchableOpacity>
+                    </View>
+                </TouchableOpacity>
+            </Modal>
         </SafeAreaView>
     );
 }
+
+const VideoMessage = ({ uri }: { uri: string }) => {
+    if (!isVideoAvailable) {
+        return (
+            <View className="w-48 h-48 bg-muted rounded-xl items-center justify-center p-4">
+                <Text className="text-xs text-muted-foreground text-center">Video playback not supported in this environment</Text>
+            </View>
+        );
+    }
+    return <VideoMessageInternal uri={uri} />;
+};
+
+const VideoMessageInternal = ({ uri }: { uri: string }) => {
+    const player = useVideoPlayer(uri, (player) => {
+        player.loop = false;
+    });
+
+    return (
+        <VideoView
+            player={player}
+            style={{ width: 192, height: 192, borderRadius: 12 }}
+            nativeControls
+        />
+    );
+};
+const AudioRecorderWrapper = ({ 
+    isAudioAvailable, 
+    isRecording, 
+    onStartRecording, 
+    onStopRecording, 
+    onUploadMedia 
+}: { 
+    isAudioAvailable: boolean, 
+    isRecording: boolean, 
+    onStartRecording: () => void, 
+    onStopRecording: (cancel: boolean) => void,
+    onUploadMedia: (uri: string) => void
+}) => {
+    if (!isAudioAvailable) {
+        return (
+            <View className="p-2">
+                <Mic size={22} className="text-muted-foreground opacity-30" />
+            </View>
+        );
+    }
+    return (
+        <AudioRecorderInternal 
+            isRecording={isRecording} 
+            onStartRecording={onStartRecording} 
+            onStopRecording={onStopRecording}
+            onUploadMedia={onUploadMedia}
+        />
+    );
+};
+
+const AudioRecorderInternal = ({ 
+    isRecording, 
+    onStartRecording, 
+    onStopRecording,
+    onUploadMedia
+}: { 
+    isRecording: boolean, 
+    onStartRecording: () => void, 
+    onStopRecording: (cancel: boolean) => void,
+    onUploadMedia: (uri: string) => void
+}) => {
+    const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+
+    const handlePressIn = async () => {
+        try {
+            const permission = await requestRecordingPermissionsAsync();
+            if (permission.status === 'granted') {
+                await recorder.prepareToRecordAsync();
+                recorder.record();
+                onStartRecording();
+            }
+        } catch (err) {
+            console.error('Failed to start recording', err);
+        }
+    };
+
+    const handlePressOut = async () => {
+        onStopRecording(false);
+        try {
+            await recorder.stop();
+            const uri = recorder.uri;
+            if (uri) {
+                onUploadMedia(uri);
+            }
+        } catch (error) {
+            console.error('Failed to stop recording', error);
+        }
+    };
+
+    return (
+        <TouchableOpacity 
+            onPressIn={handlePressIn} 
+            onPressOut={handlePressOut}
+            className={cn("p-2 rounded-full", isRecording ? "bg-red-100" : "")}
+        >
+            <Mic size={22} className={isRecording ? "text-red-600" : "text-muted-foreground"} />
+        </TouchableOpacity>
+    );
+};

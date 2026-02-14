@@ -8,16 +8,17 @@ interface ActivityItemProps {
   status: string;
   avatarUrl?: string | null;
   timestamp: string;
+  isLast?: boolean;
 }
 
-export function ActivityItem({ title, description, status, avatarUrl, timestamp }: ActivityItemProps) {
+export function ActivityItem({ title, description, status, avatarUrl, timestamp, isLast }: ActivityItemProps) {
     let statusColor = "text-gray-500";
     if (status === "completed") statusColor = "text-green-600";
     if (status === "in_progress" || status === "accepted") statusColor = "text-blue-600";
     if (status === "rejected") statusColor = "text-red-600";
     
   return (
-    <View className="flex-row items-start py-3 border-b border-border/50">
+    <View className={cn("flex-row items-start py-4 mx-4", !isLast && "border-b border-border/40")}>
       <View className="h-10 w-10 rounded-full bg-muted items-center justify-center mr-3 overflow-hidden">
         {avatarUrl ? (
             <Image source={{ uri: avatarUrl }} className="w-full h-full" />

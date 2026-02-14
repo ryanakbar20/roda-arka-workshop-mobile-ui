@@ -10,6 +10,7 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { ChevronLeft } from "lucide-react-native";
 import { ProfileStackParamList } from "../../navigation/types";
+import { Card, CardContent } from "../../components/ui/Card";
 
 // Schema
 const editProfileSchema = z.object({
@@ -79,121 +80,145 @@ export default function EditProfileScreen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-             <View className="px-4 py-3 border-b border-border/50 flex-row items-center bg-background z-10">
-                <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
+        <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
+             <View className="px-6 py-4 flex-row items-center bg-background border-b border-border/40">
+                <TouchableOpacity onPress={() => navigation.goBack()} className="p-2 -ml-2 rounded-full active:bg-muted/10">
                     <ChevronLeft size={24} className="text-foreground" />
                 </TouchableOpacity>
-                <Text className="text-lg font-bold text-foreground">Edit Profile</Text>
+                <Text className="text-xl font-bold text-foreground ml-2">Edit Workshop Profile</Text>
             </View>
+ 
+            <KeyboardAvoidingView 
+                behavior={Platform.OS === "ios" ? "padding" : "padding"} 
+                className="flex-1"
+                keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+            >
+                <ScrollView contentContainerClassName="p-6 pb-20">
+                    <Text className="text-sm text-muted-foreground mb-6">
+                        Complete your workshop details to help customers find you more easily.
+                    </Text>
 
-            <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
-                <ScrollView contentContainerClassName="p-6">
-                    <Controller
-                        control={control}
-                        name="name"
-                        render={({ field: { onChange, value } }) => (
-                            <Input
-                                label="Workshop Name"
-                                value={value}
-                                onChangeText={onChange}
-                                error={errors.name?.message}
-                            />
-                        )}
-                    />
-
-                    <Controller
-                        control={control}
-                        name="description"
-                        render={({ field: { onChange, value } }) => (
-                            <Input
-                                label="Description"
-                                value={value}
-                                onChangeText={onChange}
-                                multiline
-                                numberOfLines={3}
-                                className="h-20"
-                            />
-                        )}
-                    />
-                    
-                    <Controller
-                        control={control}
-                        name="email"
-                        render={({ field: { onChange, value } }) => (
-                            <Input
-                                label="Email"
-                                value={value}
-                                onChangeText={onChange}
-                                error={errors.email?.message}
-                                autoCapitalize="none"
-                                keyboardType="email-address"
-                            />
-                        )}
-                    />
-
-                    <Controller
-                        control={control}
-                        name="phone"
-                        render={({ field: { onChange, value } }) => (
-                            <Input
-                                label="Phone Number"
-                                value={value}
-                                onChangeText={onChange}
-                                error={errors.phone?.message}
-                                keyboardType="phone-pad"
-                            />
-                        )}
-                    />
-
-                    <Controller
-                        control={control}
-                        name="address"
-                        render={({ field: { onChange, value } }) => (
-                            <Input
-                                label="Address"
-                                value={value}
-                                onChangeText={onChange}
-                                error={errors.address?.message}
-                                multiline
-                            />
-                        )}
-                    />
-
-                    <View className="flex-row gap-4">
-                        <View className="flex-1">
-                             <Controller
-                                control={control}
-                                name="city"
-                                render={({ field: { onChange, value } }) => (
-                                    <Input
-                                        label="City"
-                                        value={value}
-                                        onChangeText={onChange}
-                                    />
-                                )}
-                            />
-                        </View>
-                        <View className="flex-1">
+                    <Card className="mb-8 overflow-hidden rounded-[24px]">
+                        <CardContent className="p-6 space-y-5">
                             <Controller
                                 control={control}
-                                name="province"
+                                name="name"
                                 render={({ field: { onChange, value } }) => (
                                     <Input
-                                        label="Province"
+                                        label="Workshop Name"
                                         value={value}
                                         onChangeText={onChange}
+                                        error={errors.name?.message}
+                                        placeholder="e.g. Master Auto Care"
                                     />
                                 )}
                             />
-                        </View>
-                    </View>
+
+                            <Controller
+                                control={control}
+                                name="description"
+                                render={({ field: { onChange, value } }) => (
+                                    <Input
+                                        label="About Workshop"
+                                        value={value}
+                                        onChangeText={onChange}
+                                        multiline
+                                        numberOfLines={3}
+                                        className="h-24 text-top"
+                                        placeholder="Tell customers about your specialties..."
+                                    />
+                                )}
+                            />
+                            
+                            <View className="h-[1px] bg-border/40 my-2" />
+
+                            <Controller
+                                control={control}
+                                name="email"
+                                render={({ field: { onChange, value } }) => (
+                                    <Input
+                                        label="Business Email"
+                                        value={value}
+                                        onChangeText={onChange}
+                                        error={errors.email?.message}
+                                        autoCapitalize="none"
+                                        keyboardType="email-address"
+                                        placeholder="workshop@example.com"
+                                    />
+                                )}
+                            />
+
+                            <Controller
+                                control={control}
+                                name="phone"
+                                render={({ field: { onChange, value } }) => (
+                                    <Input
+                                        label="Contact Number"
+                                        value={value}
+                                        onChangeText={onChange}
+                                        error={errors.phone?.message}
+                                        keyboardType="phone-pad"
+                                        placeholder="+62..."
+                                    />
+                                )}
+                            />
+
+                            <View className="h-[1px] bg-border/40 my-2" />
+
+                            <Controller
+                                control={control}
+                                name="address"
+                                render={({ field: { onChange, value } }) => (
+                                    <Input
+                                        label="Full Address"
+                                        value={value}
+                                        onChangeText={onChange}
+                                        error={errors.address?.message}
+                                        multiline
+                                        placeholder="Street name, number..."
+                                    />
+                                )}
+                            />
+
+                            <View className="flex-row gap-4">
+                                <View className="flex-1">
+                                     <Controller
+                                        control={control}
+                                        name="city"
+                                        render={({ field: { onChange, value } }) => (
+                                            <Input
+                                                label="City"
+                                                value={value}
+                                                onChangeText={onChange}
+                                                placeholder="Jakarta"
+                                            />
+                                        )}
+                                    />
+                                </View>
+                                <View className="flex-1">
+                                    <Controller
+                                        control={control}
+                                        name="province"
+                                        render={({ field: { onChange, value } }) => (
+                                            <Input
+                                                label="Province"
+                                                value={value}
+                                                onChangeText={onChange}
+                                                placeholder="DKI Jakarta"
+                                            />
+                                        )}
+                                    />
+                                </View>
+                            </View>
+                        </CardContent>
+                    </Card>
 
                     <Button 
-                        label="Save Changes" 
+                        label="Save Workshop Profile" 
                         onPress={handleSubmit(onSubmit)} 
                         loading={loading}
-                        className="mt-6"
+                        size="lg"
+                        className="rounded-2xl shadow-sm shadow-primary/20"
                     />
                 </ScrollView>
             </KeyboardAvoidingView>

@@ -11,8 +11,8 @@ import { cn } from "../../lib/utils";
 
 type TabStatus = "pending" | "active" | "history";
 
-export default function OrdersScreen() {
-    const navigation = useNavigation<NativeStackNavigationProp<OrdersStackParamList>>();
+export default function OrdersScreen({ navigation }: { navigation: NativeStackNavigationProp<OrdersStackParamList> }) {
+    // const navigation = useNavigation<NativeStackNavigationProp<OrdersStackParamList>>();
     const [activeTab, setActiveTab] = useState<TabStatus>("pending");
     const [bookings, setBookings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -118,36 +118,48 @@ export default function OrdersScreen() {
         navigation.navigate("BookingDetail", { bookingId: booking.id });
     };
 
-    const TabButton = ({ label, value }: { label: string; value: TabStatus }) => (
-        <TouchableOpacity 
-            onPress={() => setActiveTab(value)}
-            className={cn(
-                "px-4 py-2 rounded-full mr-2 border",
-                activeTab === value ? "bg-primary border-primary" : "bg-card border-border"
-            )}
-        >
-            <Text className={cn(
-                "font-medium",
-                activeTab === value ? "text-primary-foreground" : "text-muted-foreground"
-            )}>
-                {label}
-            </Text>
-        </TouchableOpacity>
-    );
+
 
     return (
-        <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-             <View className="px-5 py-4 bg-background">
+        <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} edges={['top']}>
+             <View style={{ paddingHorizontal: 24, paddingVertical: 16, backgroundColor: 'white' }}>
                 <Text className="text-2xl font-bold text-foreground mb-4">Orders</Text>
-                <View className="flex-row">
-                    <TabButton label="Requests" value="pending" />
-                    <TabButton label="In Progress" value="active" />
-                    <TabButton label="History" value="history" />
+                <View style={{ flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.05)', padding: 4, borderRadius: 16 }}>
+                    <TouchableOpacity 
+                        key="pending"
+                        onPress={() => setActiveTab("pending")}
+                        style={[
+                            { flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+                            activeTab === "pending" ? { backgroundColor: 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 } : {}
+                        ]}
+                    >
+                        <Text style={{ fontWeight: '600', color: activeTab === "pending" ? "#2563eb" : "#64748b" }}>Requests</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                        key="active"
+                        onPress={() => setActiveTab("active")}
+                        style={[
+                            { flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+                            activeTab === "active" ? { backgroundColor: 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 } : {}
+                        ]}
+                    >
+                        <Text style={{ fontWeight: '600', color: activeTab === "active" ? "#2563eb" : "#64748b" }}>Active</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                        key="history"
+                        onPress={() => setActiveTab("history")}
+                        style={[
+                            { flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+                            activeTab === "history" ? { backgroundColor: 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 } : {}
+                        ]}
+                    >
+                        <Text style={{ fontWeight: '600', color: activeTab === "history" ? "#2563eb" : "#64748b" }}>History</Text>
+                    </TouchableOpacity>
                 </View>
             </View>
 
             {loading ? (
-                <View className="flex-1 justify-center items-center">
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <ActivityIndicator size="large" color="#2563eb" />
                 </View>
             ) : (
@@ -162,12 +174,10 @@ export default function OrdersScreen() {
                         </View>
                     }
                     renderItem={({ item }) => (
-                        <TouchableOpacity onPress={() => handlePress(item)}>
-                            <ServiceCard 
-                                service={item}
-                                onPress={() => handlePress(item)}
-                            />
-                        </TouchableOpacity>
+                        <ServiceCard 
+                            service={item}
+                            onPress={() => handlePress(item)}
+                        />
                     )}
                 />
             )}

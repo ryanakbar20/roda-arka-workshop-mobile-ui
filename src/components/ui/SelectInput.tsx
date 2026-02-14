@@ -17,6 +17,7 @@ interface SelectInputProps {
   multiple?: boolean;
   error?: string;
   disabled?: boolean;
+  containerClassName?: string;
 }
 
 export function SelectInput({
@@ -27,7 +28,8 @@ export function SelectInput({
   onChange,
   multiple = false,
   error,
-  disabled = false
+  disabled = false,
+  containerClassName
 }: SelectInputProps) {
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -67,15 +69,19 @@ export function SelectInput({
   };
 
   return (
-    <View className="space-y-2 w-full">
-      {label && <Text className="text-sm font-medium text-foreground">{label}</Text>}
+    <View className={cn("w-full mb-4", containerClassName)}>
+      {label && (
+        <Text className="text-[13px] font-semibold text-muted-foreground mb-1.5 ml-0.5">
+          {label}
+        </Text>
+      )}
       
       <TouchableOpacity
         onPress={() => !disabled && setModalVisible(true)}
         disabled={disabled}
         activeOpacity={disabled ? 1 : 0.7}
         className={cn(
-          "flex-row items-center justify-between h-12 w-full rounded-md border border-input bg-background px-3 py-2",
+          "flex-row items-center justify-between h-14 w-full rounded-xl border border-input bg-background/50 px-4 py-2",
           error && "border-destructive",
           disabled && "opacity-50 bg-muted/20"
         )}
@@ -83,16 +89,16 @@ export function SelectInput({
         <Text
             numberOfLines={1}
             className={cn(
-            "text-sm flex-1 mr-2",
+            "text-base flex-1 mr-2",
             (!value || (Array.isArray(value) && value.length === 0)) ? "text-muted-foreground" : "text-foreground"
             )}
         >
           {getDisplayValue()}
         </Text>
-        <ChevronDown size={16} className="text-muted-foreground" />
+        <ChevronDown size={20} className="text-muted-foreground" />
       </TouchableOpacity>
       
-      {error && <Text className="text-xs text-destructive">{error}</Text>}
+      {error && <Text className="text-xs text-destructive mt-1 ml-1">{error}</Text>}
 
       <Modal
         visible={modalVisible}
@@ -101,15 +107,19 @@ export function SelectInput({
         onRequestClose={() => setModalVisible(false)}
       >
         <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
-          <View className="flex-1 justify-end bg-black/50">
+          <View className="flex-1 justify-end bg-black/40">
             <TouchableWithoutFeedback>
-              <View className="bg-background rounded-t-xl max-h-[70%]">
-                <View className="p-4 border-b border-border flex-row justify-between items-center">
-                  <Text className="font-bold text-lg text-foreground">
+              <View className="bg-background rounded-t-[32px] max-h-[80%] shadow-2xl">
+                <View className="items-center pt-3 pb-1">
+                  <View className="w-12 h-1.5 bg-muted rounded-full" />
+                </View>
+
+                <View className="px-6 py-4 border-b border-border/50 flex-row justify-between items-center">
+                  <Text className="font-bold text-xl text-foreground">
                     {placeholder}
                   </Text>
                   <TouchableOpacity onPress={() => setModalVisible(false)}>
-                    <Text className="text-primary font-medium">Done</Text>
+                    <Text className="text-primary font-bold text-base">Done</Text>
                   </TouchableOpacity>
                 </View>
                 
@@ -119,20 +129,21 @@ export function SelectInput({
                   renderItem={({ item }) => (
                     <TouchableOpacity
                       onPress={() => handleSelect(item.value)}
-                      className="flex-row items-center justify-between p-4 border-b border-border/50"
+                      className="flex-row items-center justify-between px-6 py-5 border-b border-border/30"
+                      activeOpacity={0.6}
                     >
                       <Text className={cn(
                         "text-base",
-                        isSelected(item.value) ? "text-primary font-semibold" : "text-foreground"
+                        isSelected(item.value) ? "text-primary font-bold" : "text-foreground font-medium"
                       )}>
                         {item.label}
                       </Text>
                       {isSelected(item.value) && (
-                        <Check size={20} className="text-primary" />
+                        <Check size={22} className="text-primary" />
                       )}
                     </TouchableOpacity>
                   )}
-                  contentContainerClassName="pb-8"
+                  contentContainerClassName="pb-10"
                 />
               </View>
             </TouchableWithoutFeedback>

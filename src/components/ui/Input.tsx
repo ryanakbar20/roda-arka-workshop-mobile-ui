@@ -11,20 +11,24 @@ interface InputProps extends TextInputProps {
 export const Input = React.forwardRef<TextInput, InputProps>(
   ({ className, containerClassName, label, error, ...props }, ref) => {
     return (
-      <View className={cn("w-full space-y-2", containerClassName)}>
-        {label && <Text className="text-sm font-medium text-foreground">{label}</Text>}
+      <View className={cn("w-full mb-4", containerClassName)}>
+        {label && (
+          <Text className="text-[13px] font-semibold text-muted-foreground mb-1.5 ml-0.5">
+            {label}
+          </Text>
+        )}
         <TextInput
           ref={ref}
           className={cn(
-            "flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground",
-            "focus:border-primary focus:ring-1 focus:ring-primary",
-            error && "border-destructive",
+            "flex h-14 w-full rounded-xl border border-input bg-background/50 px-4 py-3 text-base text-foreground",
+            "focus:border-primary focus:ring-2 focus:ring-primary/10",
+            error && "border-destructive focus:ring-destructive/10",
             className
           )}
           placeholderTextColor="hsl(var(--muted-foreground))"
           {...props}
         />
-        {error && <Text className="text-xs text-destructive">{error}</Text>}
+        {error && <Text className="text-xs text-destructive mt-1 ml-1">{error}</Text>}
       </View>
     );
   }

@@ -6,7 +6,8 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { HomeStackParamList } from "../../../navigation/types";
 import { supabase } from "../../../lib/supabase";
 import { Button } from "../../../components/ui/Button";
-import { ChevronLeft, User, Car, Calendar, Package, Wrench, DollarSign } from "lucide-react-native";
+import { ChevronLeft, User, Calendar, Car, Wrench, AlertCircle } from "lucide-react-native";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/Card";
 import dayjs from "../../../lib/dayjs";
 
 type ServiceDetailRouteProp = RouteProp<HomeStackParamList, "ServiceDetail">;
@@ -130,53 +131,70 @@ export default function ServiceDetailScreen() {
             </View>
 
             <ScrollView 
-                contentContainerClassName="p-4 pb-24"
+                contentContainerClassName="p-6 pb-32"
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                showsVerticalScrollIndicator={false}
             >
                 {/* Customer Info */}
-                <View className="bg-card p-4 rounded-xl border border-border mb-4">
-                    <Text className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Customer</Text>
-                    <View className="flex-row items-center mb-2">
-                        <User size={18} className="text-primary mr-3" />
-                         <View>
-                             <Text className="text-base font-bold text-foreground">{customerName}</Text>
-                             <Text className="text-sm text-muted-foreground">{profile.phone || service.service_details?.offline_data?.phone || "-"}</Text>
-                         </View>
-                    </View>
-                </View>
+                <Card className="mb-4 overflow-hidden">
+                    <CardContent className="p-0">
+                        <View className="flex-row items-center p-4">
+                            <View className="h-12 w-12 bg-primary/10 rounded-2xl items-center justify-center mr-4">
+                                <User size={24} className="text-primary" />
+                            </View>
+                            <View className="flex-1">
+                                <Text className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider mb-0.5">Customer</Text>
+                                <Text className="text-lg font-bold text-foreground leading-tight">{customerName}</Text>
+                                <Text className="text-sm text-muted-foreground">{profile.phone || service.service_details?.offline_data?.phone || "-"}</Text>
+                            </View>
+                        </View>
+                    </CardContent>
+                </Card>
 
                 {/* Vehicle Info */}
-                <View className="bg-card p-4 rounded-xl border border-border mb-4">
-                    <Text className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Vehicle</Text>
-                    <View className="flex-row items-center mb-2">
-                         <Car size={18} className="text-primary mr-3" />
-                         <View>
-                             <Text className="text-base font-bold text-foreground">{brand} {model}</Text>
-                             <Text className="text-sm text-muted-foreground">{plate}</Text>
-                         </View>
-                    </View>
-                </View>
+                <Card className="mb-4 overflow-hidden">
+                    <CardContent className="p-0">
+                        <View className="flex-row items-center p-4">
+                            <View className="h-12 w-12 bg-blue-50 rounded-2xl items-center justify-center mr-4">
+                                <Car size={24} className="text-blue-600" />
+                            </View>
+                            <View className="flex-1">
+                                <Text className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider mb-0.5">Vehicle</Text>
+                                <Text className="text-lg font-bold text-foreground leading-tight">{brand} {model}</Text>
+                                <Text className="text-sm text-muted-foreground">{plate}</Text>
+                            </View>
+                        </View>
+                    </CardContent>
+                </Card>
 
                 {/* Service Info */}
-                <View className="bg-card p-4 rounded-xl border border-border mb-4">
-                    <Text className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Details</Text>
-                    <View className="flex-row items-center mb-3">
-                        <Calendar size={18} className="text-muted-foreground mr-3" />
-                        <Text className="text-base text-foreground">{dayjs(service.booking_date).format("D MMMM YYYY, HH:mm")}</Text>
-                    </View>
-                    <View className="flex-row items-start">
-                        <Wrench size={18} className="text-muted-foreground mr-3 mt-1" />
-                        <Text className="text-base text-foreground flex-1">{service.notes || "No complaints/notes"}</Text>
-                    </View>
-                </View>
+                <Card className="mb-8 overflow-hidden">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-base text-muted-foreground uppercase tracking-widest text-[11px]">Service Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-2">
+                        <View className="flex-row items-center mb-4 bg-muted/20 p-3 rounded-xl">
+                            <Calendar size={18} className="text-muted-foreground mr-3" />
+                            <Text className="text-base font-medium text-foreground">{dayjs(service.booking_date).format("D MMMM YYYY, HH:mm")}</Text>
+                        </View>
+                        <View className="flex-row items-start bg-muted/20 p-4 rounded-xl">
+                            <Wrench size={18} className="text-muted-foreground mr-3 mt-1" />
+                            <View className="flex-1">
+                                <Text className="text-xs text-muted-foreground uppercase font-bold mb-1">Complaint / Notes</Text>
+                                <Text className="text-base text-foreground leading-5">{service.notes || "No complaints or notes provided."}</Text>
+                            </View>
+                        </View>
+                    </CardContent>
+                </Card>
 
                  {/* Action Buttons */}
-                <View className="mt-4 gap-3">
+                <View className="gap-4">
                     {status === "accepted" && (
                          <Button 
                             label="Start Service" 
                             onPress={() => updateStatus("in_progress")}
                             loading={actionLoading}
+                            size="lg"
                         />
                     )}
                     {status === "in_progress" && (
@@ -184,23 +202,25 @@ export default function ServiceDetailScreen() {
                             label="Complete Service" 
                             onPress={() => updateStatus("completed")}
                             loading={actionLoading}
-                            variant="default" // primary color
-                            className="bg-green-600"
+                            size="lg"
+                            className="bg-green-600 border-green-600"
                         />
                     )}
                     {(status === "completed") && (
                         <Button 
-                             label="Mark as Unpaid (Revert)"
+                             label="Revert to In Progress"
                              variant="outline"
                              onPress={() => updateStatus("in_progress")}
                              loading={actionLoading}
+                             size="lg"
                         />
                     )}
                     {status === "pending" && (
                          <Button 
-                            label="Review Request" 
+                            label="Review Booking Request" 
                             onPress={() => navigation.navigate("BookingDetail", { bookingId: serviceId })}
-                            variant="outline"
+                            variant="default"
+                            size="lg"
                         />
                     )}
                     
@@ -208,11 +228,13 @@ export default function ServiceDetailScreen() {
                     {(status === "accepted" || status === "in_progress") && (
                         <Button 
                             label="Cancel Service" 
-                            variant="destructive"
+                            variant="ghost"
                             onPress={() => updateStatus("cancelled")}
                             loading={actionLoading}
-                            className="mt-2"
-                        />
+                            className="bg-red-50"
+                        >
+                            <Text className="text-red-600 font-bold">Cancel Service</Text>
+                        </Button>
                     )}
                 </View>
 

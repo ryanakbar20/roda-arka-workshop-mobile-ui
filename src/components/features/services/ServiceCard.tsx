@@ -50,58 +50,63 @@ export const ServiceCard = ({
   return (
     <TouchableOpacity 
         onPress={onPress}
-        className="bg-card border border-border rounded-xl p-4 mb-3 shadow-sm"
+        className="bg-card border border-border/50 rounded-2xl p-4 mb-4 shadow-sm"
     >
-        <View className="flex-1">
-            <Text className="font-bold text-lg text-foreground mb-1">{customerName}</Text>
-            <View className="flex-row items-center mb-1">
-                <User size={14} className="text-muted-foreground mr-1" />
-                <Text className="text-sm text-foreground">{phone}</Text>
-                    {showStatusBadge && (
-                        <View className={cn("ml-2 px-2 py-1 rounded-full", getStatusColor(service.status).split(" ")[0])}>
-                            <Text className={cn("text-xs font-medium capitalize", getStatusColor(service.status).split(" ")[1])}>
-                                {service.status === 'accepted' ? 'In Progress' : service.status.replace('_', ' ')}
-                            </Text>
-                        </View>
-                    )}
+        <View className="flex-row justify-between items-start mb-3">
+            <View className="flex-1 mr-2">
+                <Text className="font-bold text-lg text-foreground leading-tight mb-0.5">{customerName}</Text>
+                <View className="flex-row items-center">
+                    <User size={13} className="text-muted-foreground mr-1" />
+                    <Text className="text-xs text-muted-foreground font-medium">{phone}</Text>
                 </View>
-
-                {/* Date */}
-                <View className="flex-row items-center mb-3">
-                    <Calendar size={14} className="text-muted-foreground mr-1.5" />
-                    <Text className="text-xs text-muted-foreground">
-                        {dayjs(service.booking_date || service.created_at).format("D MMM YYYY")}, {service.booking_time ? service.booking_time.slice(0, 5) : dayjs(service.created_at).format("HH:mm")}
+            </View>
+            {showStatusBadge && (
+                <View className={cn("px-2.5 py-1 rounded-lg", getStatusColor(service.status).split(" ")[0])}>
+                    <Text className={cn("text-[10px] font-bold uppercase tracking-wider", getStatusColor(service.status).split(" ")[1])}>
+                        {service.status === 'accepted' ? 'In Progress' : service.status.replace('_', ' ')}
                     </Text>
                 </View>
-
-                {/* Vehicle */}
-                <View className="flex-row items-start mb-2">
-                    <Car size={16} className="text-muted-foreground mr-2 mt-0.5" />
-                    <Text className="text-sm font-medium text-foreground flex-1">{vehicleInfo}</Text>
-                </View>
-
-                {/* Complaint */}
-                {service.notes && (
-                    <View className="flex-row items-start bg-muted/30 p-2 rounded-md">
-                        <Wrench size={16} className="text-muted-foreground mr-2 mt-0.5" />
-                        <Text numberOfLines={2} className="text-sm text-foreground flex-1">
-                            {service.notes}
-                        </Text>
-                    </View>
-                )}
+            )}
         </View>
+
+        {/* Info Grid */}
+        <View className="space-y-2 mb-4">
+            <View className="flex-row items-center">
+                <Calendar size={14} className="text-primary mr-2" />
+                <Text className="text-xs text-foreground font-semibold">
+                    {dayjs(service.booking_date || service.created_at).format("D MMM YYYY")}, {service.booking_time ? service.booking_time.slice(0, 5) : dayjs(service.created_at).format("HH:mm")}
+                </Text>
+            </View>
+
+            <View className="flex-row items-start">
+                <Car size={14} className="text-blue-500 mr-2 mt-0.5" />
+                <Text className="text-xs text-foreground font-medium flex-1" numberOfLines={1}>{vehicleInfo}</Text>
+            </View>
+        </View>
+
+        {/* Complaint Snippet */}
+        {service.notes && (
+            <View className="bg-muted/30 p-2.5 rounded-xl border border-border/20">
+                <View className="flex-row items-start">
+                    <Wrench size={12} className="text-muted-foreground mr-2 mt-1" />
+                    <Text numberOfLines={2} className="text-xs text-muted-foreground leading-4 flex-1">
+                        {service.notes}
+                    </Text>
+                </View>
+            </View>
+        )}
       
-      <View className="flex-row items-center mt-3 justify-between">
-           {onAction && actionLabel && (
+       {onAction && actionLabel && (
+           <View className="mt-4 pt-3 border-t border-border/20">
                <Button 
                 size="sm" 
                 variant="outline" 
                 label={actionLabel} 
                 onPress={onAction}
-                className="h-8 py-0 px-3"
+                className="h-9 px-4 rounded-xl"
                 />
-           )}
-      </View>
+           </View>
+       )}
     </TouchableOpacity>
   );
 }

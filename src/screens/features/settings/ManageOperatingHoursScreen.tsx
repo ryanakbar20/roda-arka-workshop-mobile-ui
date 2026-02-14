@@ -11,6 +11,8 @@ import { ChevronLeft, Clock } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import { useColorScheme } from 'nativewind';
+import { Card, CardContent } from '../../../components/ui/Card';
+import { cn } from '../../../lib/utils';
 
 type DaySchedule = {
     isOpen: boolean;
@@ -236,91 +238,103 @@ export default function ManageOperatingHoursScreen() {
         const isOpen = daySchedule.isOpen;
 
         return (
-            <View key={day.key} className="bg-card border border-border rounded-xl p-4 mb-3">
-                {/* Day Header with Toggle */}
-                <View className="flex-row items-center justify-between mb-3">
-                    <Text className="text-lg font-semibold text-foreground">{day.label}</Text>
-                    <View className="flex-row items-center gap-2">
-                        <Text className={`text-sm font-medium ${isOpen ? 'text-green-600' : 'text-muted-foreground'}`}>
-                            {isOpen ? 'Open' : 'Closed'}
-                        </Text>
-                        <Switch
-                            value={isOpen}
-                            onValueChange={() => toggleDayOpen(day.key)}
-                            trackColor={{ false: '#d1d5db', true: '#86efac' }}
-                            thumbColor={isOpen ? '#16a34a' : '#f3f4f6'}
-                        />
-                    </View>
-                </View>
-
-                {/* Time Pickers - Only show if day is open */}
-                {isOpen && (
-                    <View className="flex-row gap-3">
-                        {/* Opening Time */}
-                        <View className="flex-1">
-                            <Text className="text-xs text-muted-foreground mb-1">Opening Time</Text>
-                            <TouchableOpacity 
-                                onPress={() => openTimePicker(day.key, 'open')}
-                                className="flex-row items-center justify-between p-3 border border-border rounded-lg bg-background"
-                            >
-                                <Text className="text-base text-foreground">{daySchedule.openTime}</Text>
-                                <Clock size={16} className="text-muted-foreground" />
-                            </TouchableOpacity>
+            <Card key={day.key} className="mb-4 overflow-hidden rounded-[24px] border-border/40 shadow-sm shadow-black/5">
+                <CardContent className="p-5">
+                    {/* Day Header with Toggle */}
+                    <View className="flex-row items-center justify-between mb-4">
+                        <View className="flex-row items-center">
+                            <View className={cn("h-2 w-2 rounded-full mr-3", isOpen ? "bg-green-500" : "bg-muted-foreground/30")} />
+                            <Text className="text-base font-bold text-foreground">{day.label}</Text>
                         </View>
-
-                        {/* Closing Time */}
-                        <View className="flex-1">
-                            <Text className="text-xs text-muted-foreground mb-1">Closing Time</Text>
-                            <TouchableOpacity 
-                                onPress={() => openTimePicker(day.key, 'close')}
-                                className="flex-row items-center justify-between p-3 border border-border rounded-lg bg-background"
-                            >
-                                <Text className="text-base text-foreground">{daySchedule.closeTime}</Text>
-                                <Clock size={16} className="text-muted-foreground" />
-                            </TouchableOpacity>
+                        <View className="flex-row items-center gap-3">
+                            <Text className={cn("text-xs font-bold uppercase tracking-wider", isOpen ? "text-green-600" : "text-muted-foreground/60")}>
+                                {isOpen ? 'Open' : 'Closed'}
+                            </Text>
+                            <Switch
+                                value={isOpen}
+                                onValueChange={() => toggleDayOpen(day.key)}
+                                trackColor={{ false: '#e2e8f0', true: '#bbf7d0' }}
+                                thumbColor={isOpen ? '#22c55e' : '#94a3b8'}
+                                ios_backgroundColor="#e2e8f0"
+                            />
                         </View>
                     </View>
-                )}
-            </View>
+
+                    {/* Time Pickers - Only show if day is open */}
+                    {isOpen && (
+                        <View className="flex-row gap-4">
+                            {/* Opening Time */}
+                            <View className="flex-1">
+                                <Text className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5 ml-1">Opens at</Text>
+                                <TouchableOpacity 
+                                    onPress={() => openTimePicker(day.key, 'open')}
+                                    className="flex-row items-center justify-between px-4 py-3 bg-muted/20 rounded-xl border border-border/20"
+                                >
+                                    <Text className="text-base font-bold text-foreground">{daySchedule.openTime}</Text>
+                                    <Clock size={16} className="text-muted-foreground" />
+                                </TouchableOpacity>
+                            </View>
+
+                            {/* Closing Time */}
+                            <View className="flex-1">
+                                <Text className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5 ml-1">Closes at</Text>
+                                <TouchableOpacity 
+                                    onPress={() => openTimePicker(day.key, 'close')}
+                                    className="flex-row items-center justify-between px-4 py-3 bg-muted/20 rounded-xl border border-border/20"
+                                >
+                                    <Text className="text-base font-bold text-foreground">{daySchedule.closeTime}</Text>
+                                    <Clock size={16} className="text-muted-foreground" />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    )}
+                </CardContent>
+            </Card>
         );
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-background">
-            {/* Header */}
-            <View className="px-6 py-4 border-b border-border/50 flex-row items-center space-x-4">
-                <TouchableOpacity onPress={() => navigation.goBack()} className="p-2 rounded-full active:bg-muted/10">
+        <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
+            <View className="px-6 py-4 flex-row items-center">
+                <TouchableOpacity onPress={() => navigation.goBack()} className="p-2 -ml-2 rounded-full active:bg-muted/10">
                     <ChevronLeft size={24} className="text-foreground" />
                 </TouchableOpacity>
-                <Text className="text-xl font-semibold text-foreground">Operating Hours</Text>
+                <Text className="text-xl font-bold text-foreground ml-2">Operating Hours</Text>
             </View>
 
-            <ScrollView contentContainerClassName="p-6">
-                <Text className="text-muted-foreground mb-6">
-                    Set your workshop's operating hours for each day of the week. Toggle days on/off and customize opening times.
+            <ScrollView contentContainerClassName="p-6 pb-24">
+                <Text className="text-sm text-muted-foreground mb-8">
+                    Specify when your workshop is open for bookings. Customers will only be able to schedule services during these hours.
                 </Text>
 
                 {/* Day Cards */}
                 {DAYS.map(day => renderDayCard(day))}
 
                 <Button 
-                    label={saving ? "Saving..." : "Save Changes"}
+                    label={saving ? "Saving Changes..." : "Save Operating Hours"}
                     onPress={handleSave}
                     disabled={saving || loading}
-                    className="mt-4"
+                    size="lg"
+                    className="mt-4 rounded-2xl shadow-sm shadow-primary/20"
                 />
+                
+                <View className="bg-muted/30 p-4 rounded-2xl flex-row items-start mt-6">
+                    <Text className="text-[11px] text-muted-foreground leading-4 italic">
+                        * Note: Changes to operating hours will apply to all future booking slots. Ongoing bookings are not affected.
+                    </Text>
+                </View>
             </ScrollView>
 
             {/* Time Picker Modal */}
             {showPicker && (
                 Platform.OS === 'ios' ? (
-                    <View className="absolute bottom-0 left-0 right-0 bg-card border-t border-border p-4">
-                        <View className="flex-row justify-between items-center mb-2">
-                            <Text className="text-lg font-semibold text-foreground">
+                    <View className="absolute bottom-0 left-0 right-0 bg-card border-t border-border p-6 shadow-2xl">
+                        <View className="flex-row justify-between items-center mb-4">
+                            <Text className="text-lg font-bold text-foreground">
                                 Select {showPicker.type === 'open' ? 'Opening' : 'Closing'} Time
                             </Text>
-                            <TouchableOpacity onPress={confirmIOSTime}>
-                                <Text className="text-primary font-semibold">Done</Text>
+                            <TouchableOpacity onPress={confirmIOSTime} className="bg-primary/10 px-4 py-2 rounded-xl">
+                                <Text className="text-primary font-bold">Done</Text>
                             </TouchableOpacity>
                         </View>
                         <DateTimePicker
@@ -329,7 +343,7 @@ export default function ManageOperatingHoursScreen() {
                             is24Hour={true}
                             display="spinner"
                             onChange={handleTimeChange}
-                            textColor={colorScheme === 'dark' ? '#ffffff' : '#000000'}
+                            textColor={colorScheme === 'dark' ? '#ffffff' : '#0f172a'}
                         />
                     </View>
                 ) : (

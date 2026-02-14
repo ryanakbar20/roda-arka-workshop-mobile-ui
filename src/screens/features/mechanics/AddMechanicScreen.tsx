@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, ScrollView, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, ScrollView, Alert, KeyboardAvoidingView, Platform, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useForm, Controller } from "react-hook-form";
@@ -10,6 +10,7 @@ import { supabase } from "../../../lib/supabase";
 import { getWorkshopId } from "../../../lib/utils";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
+import { Card } from "../../../components/ui/Card";
 import { ChevronLeft } from "lucide-react-native";
 
 // Schema
@@ -102,7 +103,7 @@ export default function AddMechanicScreen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+        <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
              <View className="px-4 py-2 border-b border-border/50 flex-row items-center bg-background z-10">
                 <TouchableOpacity onPress={() => navigation.goBack()} className="p-2 -ml-2">
                     <ChevronLeft size={24} className="text-foreground" />
@@ -110,104 +111,121 @@ export default function AddMechanicScreen() {
                 <Text className="text-lg font-bold ml-2 text-foreground">Add Mechanic</Text>
             </View>
             
-            <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
-                <ScrollView contentContainerClassName="p-6">
-                    <Controller
-                        control={control}
-                        name="name"
-                        render={({ field: { onChange, value } }) => (
-                            <Input
-                                label="Full Name"
-                                placeholder="John Doe"
-                                value={value}
-                                onChangeText={onChange}
-                                error={errors.name?.message}
-                            />
-                        )}
-                    />
-                    
-                    <Controller
-                        control={control}
-                        name="email"
-                        render={({ field: { onChange, value } }) => (
-                            <Input
-                                label="Email"
-                                placeholder="mechanic@example.com"
-                                value={value}
-                                onChangeText={onChange}
-                                error={errors.email?.message}
-                                autoCapitalize="none"
-                                keyboardType="email-address"
-                            />
-                        )}
-                    />
+            <KeyboardAvoidingView 
+                behavior={Platform.OS === "ios" ? "padding" : "padding"} 
+                className="flex-1"
+                keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+            >
+                <ScrollView 
+                    contentContainerClassName="p-6 pb-12"
+                    showsVerticalScrollIndicator={false}
+                >
+                    <Text className="text-lg font-bold mb-4 text-foreground ml-1">Account Information</Text>
+                    <Card className="p-4 mb-8 bg-card/40">
+                        <Controller
+                            control={control}
+                            name="name"
+                            render={({ field: { onChange, value } }) => (
+                                <Input
+                                    label="Full Name"
+                                    placeholder="John Doe"
+                                    value={value}
+                                    onChangeText={onChange}
+                                    error={errors.name?.message}
+                                    containerClassName="mb-1"
+                                />
+                            )}
+                        />
+                        
+                        <Controller
+                            control={control}
+                            name="email"
+                            render={({ field: { onChange, value } }) => (
+                                <Input
+                                    label="Email"
+                                    placeholder="mechanic@example.com"
+                                    value={value}
+                                    onChangeText={onChange}
+                                    error={errors.email?.message}
+                                    autoCapitalize="none"
+                                    keyboardType="email-address"
+                                    containerClassName="mb-1"
+                                />
+                            )}
+                        />
 
-                    <Controller
-                        control={control}
-                        name="password"
-                        render={({ field: { onChange, value } }) => (
-                            <Input
-                                label="Password"
-                                placeholder="******"
-                                secureTextEntry
-                                value={value}
-                                onChangeText={onChange}
-                                error={errors.password?.message}
-                            />
-                        )}
-                    />
+                        <Controller
+                            control={control}
+                            name="password"
+                            render={({ field: { onChange, value } }) => (
+                                <Input
+                                    label="Password"
+                                    placeholder="******"
+                                    secureTextEntry
+                                    value={value}
+                                    onChangeText={onChange}
+                                    error={errors.password?.message}
+                                    containerClassName="mb-0"
+                                />
+                            )}
+                        />
+                    </Card>
 
-                    <Controller
-                        control={control}
-                        name="phone"
-                        render={({ field: { onChange, value } }) => (
-                            <Input
-                                label="Phone Number"
-                                placeholder="0812..."
-                                value={value}
-                                onChangeText={onChange}
-                                keyboardType="phone-pad"
-                            />
-                        )}
-                    />
+                    <Text className="text-lg font-bold mb-4 text-foreground ml-1">Professional Details</Text>
+                    <Card className="p-4 mb-8 bg-card/40">
+                        <Controller
+                            control={control}
+                            name="phone"
+                            render={({ field: { onChange, value } }) => (
+                                <Input
+                                    label="Phone Number"
+                                    placeholder="0812..."
+                                    value={value}
+                                    onChangeText={onChange}
+                                    keyboardType="phone-pad"
+                                    containerClassName="mb-1"
+                                />
+                            )}
+                        />
 
-                    <Controller
-                        control={control}
-                        name="experience_years"
-                        render={({ field: { onChange, value } }) => (
-                            <Input
-                                label="Experience (Years)"
-                                placeholder="5"
-                                value={value}
-                                onChangeText={onChange}
-                                keyboardType="numeric"
-                            />
-                        )}
-                    />
+                        <Controller
+                            control={control}
+                            name="experience_years"
+                            render={({ field: { onChange, value } }) => (
+                                <Input
+                                    label="Experience (Years)"
+                                    placeholder="5"
+                                    value={value}
+                                    onChangeText={onChange}
+                                    keyboardType="numeric"
+                                    containerClassName="mb-1"
+                                />
+                            )}
+                        />
 
-                     <Controller
-                        control={control}
-                        name="specializations"
-                        render={({ field: { onChange, value } }) => (
-                            <Input
-                                label="Specializations (comma separated)"
-                                placeholder="Engine, Tire, Oil Change"
-                                value={value}
-                                onChangeText={onChange}
-                            />
-                        )}
-                    />
+                        <Controller
+                            control={control}
+                            name="specializations"
+                            render={({ field: { onChange, value } }) => (
+                                <Input
+                                    label="Specializations (comma separated)"
+                                    placeholder="Engine, Tire, Oil Change"
+                                    value={value}
+                                    onChangeText={onChange}
+                                    containerClassName="mb-0"
+                                />
+                            )}
+                        />
+                    </Card>
 
                     <Button 
                         label="Add Mechanic" 
                         onPress={handleSubmit(onSubmit)} 
                         loading={loading}
-                        className="mt-6"
+                        className="mt-2"
                     />
                 </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
 }
-
-import { TouchableOpacity } from "react-native";

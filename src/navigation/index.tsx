@@ -14,8 +14,14 @@ export function RootNavigator() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (error) {
+        console.error("Supabase getSession error:", error);
+      }
+      setSession(data?.session || null);
+      setLoading(false);
+    }).catch(err => {
+      console.error("Supabase getSession catch:", err);
       setLoading(false);
     });
 
@@ -28,7 +34,7 @@ export function RootNavigator() {
 
   if (loading) {
     return (
-      <View className="flex-1 justify-center items-center bg-background">
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" />
       </View>
     );

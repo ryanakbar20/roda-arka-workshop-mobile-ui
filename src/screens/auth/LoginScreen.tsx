@@ -20,8 +20,8 @@ const loginSchema = z.object({
 
 type LoginSchema = z.infer<typeof loginSchema>;
 
-export default function LoginScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
+export default function LoginScreen({ navigation }: { navigation: NativeStackNavigationProp<AuthStackParamList> }) {
+  // const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const [loading, setLoading] = useState(false);
 
   const {
@@ -116,18 +116,20 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
       <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
         className="flex-1"
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
         <ScrollView contentContainerClassName="flex-grow justify-center p-6">
           <View className="mb-6 items-center">
             {/* Logo Placeholder */}
-            <View className="h-16 w-16 bg-primary/10 rounded-2xl items-center justify-center mb-4">
-                <Text className="text-2xl font-bold text-primary">B</Text>
-            </View>
-            <Text className="text-2xl font-bold text-foreground">Welcome Back</Text>
+            <Image 
+              source={require('../../../assets/icon.png')} 
+              style={{ width: 100, height: 100, borderRadius: 100, marginBottom: 16 }} // Added mb-4 equivalent
+              resizeMode="contain"
+            />
             <Text className="text-muted-foreground mt-1 text-center">
               Sign in to manage your workshop
             </Text>

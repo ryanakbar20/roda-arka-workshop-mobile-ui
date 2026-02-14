@@ -9,7 +9,7 @@ interface CardProps extends ViewProps {
 export const Card = ({ className, ...props }: CardProps) => (
   <View
     className={cn(
-      "rounded-xl border border-border bg-card text-card-foreground shadow-sm",
+      "rounded-2xl border border-border/50 bg-card text-card-foreground shadow-sm",
       className
     )}
     {...props}
