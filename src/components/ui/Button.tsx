@@ -19,7 +19,7 @@ export const Button = ({
   disabled,
   ...props
 }: ButtonProps) => {
-  const baseStyles = "flex-row items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
+  const baseStyles = "flex-row items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
   
   const variants = {
     default: "bg-primary text-primary-foreground shadow-sm",
@@ -44,7 +44,14 @@ export const Button = ({
 
   return (
     <TouchableOpacity
-      className={cn(baseStyles, "rounded-xl", variants[variant], sizes[size], className)}
+      className={cn(
+        baseStyles, 
+        "rounded-xl", 
+        variants[variant], 
+        sizes[size], 
+        className,
+        (loading || disabled) && "opacity-50 pointer-events-none"
+      )}
       disabled={loading || disabled}
       activeOpacity={0.8}
       {...props}

@@ -39,10 +39,13 @@ export default function ChatDetailScreen() {
     const [recordingDuration, setRecordingDuration] = useState(0);
     const recordingTimer = useRef<NodeJS.Timeout | null>(null);
 
-    // Lightbox State
+    // Lightbox & Attach State
     const [viewerUrl, setViewerUrl] = useState<string | null>(null);
     const [downloading, setDownloading] = useState(false);
     const [showAttachModal, setShowAttachModal] = useState(false);
+    
+    // Preview State
+    const [previewFile, setPreviewFile] = useState<{uri: string, type: 'image' | 'video' | 'voice' | 'file', name?: string} | null>(null);
 
     useEffect(() => {
         fetchCurrentUser();
@@ -164,7 +167,7 @@ export default function ChatDetailScreen() {
     
         if (!result.canceled && result.assets[0].uri) {
             const type = result.assets[0].type === 'video' ? 'video' : 'image';
-            uploadMedia(result.assets[0].uri, type);
+            setPreviewFile({ uri: result.assets[0].uri, type });
         }
     };
 
@@ -177,12 +180,12 @@ export default function ChatDetailScreen() {
 
             if (result.assets && result.assets[0]) {
                 const asset = result.assets[0];
-                 if (asset.mimeType?.startsWith('image/')) {
-                     uploadMedia(asset.uri, 'image');
+             if (asset.mimeType?.startsWith('image/')) {
+                     setPreviewFile({ uri: asset.uri, type: 'image' });
                  } else if (asset.mimeType?.startsWith('video/')) {
-                     uploadMedia(asset.uri, 'video');
+                     setPreviewFile({ uri: asset.uri, type: 'video' });
                  } else {
-                     uploadMedia(asset.uri, 'file', asset.name);
+                     setPreviewFile({ uri: asset.uri, type: 'file', name: asset.name });
                  }
             }
         } catch (err) {
@@ -269,12 +272,19 @@ export default function ChatDetailScreen() {
             
             setMessages((prev) => [...prev, optimisticMessage]);
 
-            const response = await fetch(uri);
-            const blob = await response.blob();
+            const formData = new FormData();
+            formData.append('file', {
+                uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
+                name: fileName.split('/').pop() || 'upload.bin',
+                type: type === 'image' ? 'image/jpeg' : (type === 'video' ? 'video/mp4' : (type === 'voice' ? 'audio/m4a' : '*/*'))
+            } as any);
 
             const { error: uploadError } = await supabase.storage
                 .from("chat-media")
-                .upload(fileName, blob);
+                .upload(fileName, formData, {
+                  cacheControl: '3600',
+                  upsert: false
+                });
 
             if (uploadError) throw uploadError;
 
@@ -404,7 +414,7 @@ export default function ChatDetailScreen() {
 
             <KeyboardAvoidingView 
                 behavior={Platform.OS === "ios" ? "padding" : "padding"}
-                keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+                keyboardVerticalOffset={0}
                 className="flex-1"
             >
                 <FlatList
@@ -421,18 +431,29 @@ export default function ChatDetailScreen() {
                     className="p-4 bg-background border-t border-border/30"
                 >
                     <View className="flex-row items-end gap-2">
-                        <View className="flex-1 flex-row items-end bg-muted/40 rounded-[24px] px-3 py-1 border border-border/40">
-                             <TouchableOpacity onPress={handleAttachmentPress} className="p-2 mr-1">
-                                <Paperclip size={22} className="text-muted-foreground" />
-                            </TouchableOpacity>
-                            <TextInput
-                                className="flex-1 text-foreground text-sm max-h-24 min-h-[40px] py-2"
-                                placeholder="Message..."
-                                placeholderTextColor="#94a3b8"
-                                multiline
-                                value={text}
-                                onChangeText={setText}
-                            />
+                        <View className="flex-1 flex-row items-center bg-muted/40 rounded-[24px] px-3 py-1 border border-border/40 min-h-[48px]">
+                             {!isRecording && (
+                                 <TouchableOpacity onPress={handleAttachmentPress} className="p-2 mr-1">
+                                    <Paperclip size={22} className="text-muted-foreground" />
+                                </TouchableOpacity>
+                             )}
+                            
+                            {isRecording ? (
+                                <View className="flex-1 flex-row items-center py-2 px-2">
+                                    <View className="h-2 w-2 rounded-full bg-red-500 mr-2 animate-pulse" />
+                                    <Text className="text-foreground text-sm font-medium">{formatDuration(recordingDuration)}</Text>
+                                    <Text className="text-muted-foreground text-xs ml-auto mr-2">Tap mic to stop and send</Text>
+                                </View>
+                            ) : (
+                                <TextInput
+                                    className="flex-1 text-foreground text-sm max-h-24 min-h-[40px] py-1"
+                                    placeholder="Message..."
+                                    placeholderTextColor="#94a3b8"
+                                    multiline
+                                    value={text}
+                                    onChangeText={setText}
+                                />
+                            )}
                              {!text.trim() && (
                                 <AudioRecorderWrapper 
                                     isAudioAvailable={isAudioAvailable}
@@ -454,6 +475,53 @@ export default function ChatDetailScreen() {
                     </View>
                 </View>
             </KeyboardAvoidingView>
+
+            {/* Preview Modal */}
+            <Modal visible={!!previewFile} transparent={true} animationType="slide">
+                 <View className="flex-1 bg-black justify-center items-center pb-20 pt-10 px-4">
+                     <View className="absolute top-12 left-6 z-10">
+                        <TouchableOpacity onPress={() => setPreviewFile(null)} className="p-2 bg-white/20 rounded-full">
+                            <X size={24} color="white" />
+                        </TouchableOpacity>
+                     </View>
+
+                     {previewFile?.type === 'image' && (
+                         <Image source={{ uri: previewFile.uri }} className="w-full h-[70%]" resizeMode="contain" />
+                     )}
+                     {previewFile?.type === 'video' && (
+                         <VideoMessage uri={previewFile.uri} />
+                     )}
+                     {previewFile?.type === 'file' && (
+                         <View className="bg-white/10 p-6 rounded-2xl items-center w-full max-w-xs">
+                             <FileText size={64} color="white" />
+                             <Text className="text-white mt-4 text-center font-bold" numberOfLines={2}>
+                                 {previewFile.name || "Document"}
+                             </Text>
+                         </View>
+                     )}
+
+                     <View className="absolute bottom-10 flex-row gap-4 px-6 w-full justify-center">
+                         <TouchableOpacity 
+                             onPress={() => setPreviewFile(null)}
+                             className="flex-1 bg-white/20 py-4 rounded-xl items-center"
+                         >
+                             <Text className="text-white font-bold">Cancel</Text>
+                         </TouchableOpacity>
+                         <TouchableOpacity 
+                             onPress={() => {
+                                 if (previewFile) {
+                                    uploadMedia(previewFile.uri, previewFile.type, previewFile.name);
+                                    setPreviewFile(null);
+                                 }
+                             }}
+                             className="flex-1 bg-primary py-4 rounded-xl items-center flex-row justify-center"
+                         >
+                             <Text className="text-white font-bold mr-2">Send</Text>
+                             <Send size={18} color="white" />
+                         </TouchableOpacity>
+                     </View>
+                 </View>
+            </Modal>
 
             <Modal visible={!!viewerUrl} transparent={true} onRequestClose={() => setViewerUrl(null)}>
                 <View className="flex-1 bg-black justify-center items-center">
@@ -571,36 +639,35 @@ const AudioRecorderInternal = ({
 }) => {
     const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 
-    const handlePressIn = async () => {
-        try {
-            const permission = await requestRecordingPermissionsAsync();
-            if (permission.status === 'granted') {
-                await recorder.prepareToRecordAsync();
-                recorder.record();
-                onStartRecording();
+    const toggleRecording = async () => {
+        if (isRecording) {
+            onStopRecording(false);
+            try {
+                await recorder.stop();
+                const uri = recorder.uri;
+                if (uri) {
+                    onUploadMedia(uri);
+                }
+            } catch (error) {
+                console.error('Failed to stop recording', error);
             }
-        } catch (err) {
-            console.error('Failed to start recording', err);
-        }
-    };
-
-    const handlePressOut = async () => {
-        onStopRecording(false);
-        try {
-            await recorder.stop();
-            const uri = recorder.uri;
-            if (uri) {
-                onUploadMedia(uri);
+        } else {
+            try {
+                const permission = await requestRecordingPermissionsAsync();
+                if (permission.status === 'granted') {
+                    await recorder.prepareToRecordAsync();
+                    recorder.record();
+                    onStartRecording();
+                }
+            } catch (err) {
+                console.error('Failed to start recording', err);
             }
-        } catch (error) {
-            console.error('Failed to stop recording', error);
         }
     };
 
     return (
         <TouchableOpacity 
-            onPressIn={handlePressIn} 
-            onPressOut={handlePressOut}
+            onPress={toggleRecording}
             className={cn("p-2 rounded-full", isRecording ? "bg-red-100" : "")}
         >
             <Mic size={22} className={isRecording ? "text-red-600" : "text-muted-foreground"} />

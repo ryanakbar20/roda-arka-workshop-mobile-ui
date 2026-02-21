@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, NativeModules } from 'react-native';
-import { useAudioPlayer } from 'expo-audio';
+import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { Play, Pause, CircleOff } from 'lucide-react-native';
 import { cn } from '../../lib/utils';
 
@@ -25,18 +25,24 @@ export const AudioPlayer = (props: AudioPlayerProps) => {
 };
 
 const AudioPlayerInternal = ({ uri, isPending }: AudioPlayerProps) => {
-    const player = useAudioPlayer(uri);
+    const player = useAudioPlayer(
+        uri,
+        uri.startsWith('http') ? { downloadFirst: true } : undefined
+    );
+    const status = useAudioPlayerStatus(player);
     
-    const isPlaying = player.playing;
-    const duration = player.duration;
-    const position = player.currentTime;
+    const isPlaying = status.playing;
+    const duration = status.duration;
+    const position = status.currentTime;
 
     const togglePlay = () => {
         if (isPending) return;
         if (isPlaying) {
             player.pause();
         } else {
-            if (position >= duration) {
+            // Give a 0.5s tolerance to handle floating point duration vs position
+            const threshold = (duration || 1) - 0.5;
+            if (position > 0 && position >= threshold) {
                  player.seekTo(0);
                  player.play();
             } else {

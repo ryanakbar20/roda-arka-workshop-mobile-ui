@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "roda-arka-workshop-mobile-ui",
+    "name": "RodaArka Workshop",
     "slug": "roda-arka-workshop-mobile-ui",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -10,7 +10,8 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#ffffff",
+      "borderRadius": 100
     },
     "ios": {
       "supportsTablet": true
@@ -36,7 +37,18 @@
       "@react-native-community/datetimepicker",
       "expo-audio",
       "expo-video",
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "buildToolsVersion": "35.0.0",
+            "gradleChildHeapSize": "4g"
+          }
+        }
+      ]
     ]
   }
 }

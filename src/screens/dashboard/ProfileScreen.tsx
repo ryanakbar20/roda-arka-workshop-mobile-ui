@@ -1,12 +1,13 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Linking } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ProfileStackParamList } from "../../navigation/types";
 import { supabase } from "../../lib/supabase";
 import { getWorkshopId } from "../../lib/utils";
-import { Wrench, Package, Calendar, Clock, ChevronRight, Settings, LogOut, ShieldCheck, HelpCircle } from "lucide-react-native";
+import { Wrench, Package, Calendar, Clock, ChevronRight, Settings, LogOut, ShieldCheck, HelpCircle, Bell } from "lucide-react-native";
+import * as Notifications from 'expo-notifications';
 import { Card, CardContent } from "../../components/ui/Card";
 import { cn } from "../../lib/utils";
 
@@ -14,11 +15,16 @@ export default function ProfileScreen({ navigation }: { navigation: NativeStackN
   // const navigation = useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
   const [loading, setLoading] = useState(true);
   const [workshop, setWorkshop] = useState<any>(null);
+  const [pushEnabled, setPushEnabled] = useState(false);
 
   const fetchWorkshop = async () => {
+    setLoading(true);
     try {
       const workshopId = await getWorkshopId();
-      if (!workshopId) return;
+      if (!workshopId) {
+        setLoading(false);
+        return;
+      }
 
       const { data, error } = await supabase
         .from("workshops")
@@ -38,6 +44,12 @@ export default function ProfileScreen({ navigation }: { navigation: NativeStackN
   useFocusEffect(
     useCallback(() => {
       fetchWorkshop();
+      
+      const checkPermissions = async () => {
+        const { status } = await Notifications.getPermissionsAsync();
+        setPushEnabled(status === 'granted');
+      };
+      checkPermissions();
     }, [])
   );
 
@@ -138,7 +150,7 @@ export default function ProfileScreen({ navigation }: { navigation: NativeStackN
             </View>
 
             {/* Menu Sections */}
-            <View className="px-6 space-y-6">
+            <View className="px-6">
                 <View>
                     <Text className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4 px-1">Management</Text>
                     <View className="bg-card border border-border/50 rounded-2xl overflow-hidden shadow-sm shadow-black/5">
@@ -165,9 +177,16 @@ export default function ProfileScreen({ navigation }: { navigation: NativeStackN
                     </View>
                 </View>
 
-                <View>
+                <View className="mt-6" >
                     <Text className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4 px-1">Support & Others</Text>
                     <View className="bg-card border border-border/50 rounded-2xl overflow-hidden shadow-sm shadow-black/5">
+                        <ProfileMenuItem 
+                            icon={<Bell size={20} className="text-rose-500" />}
+                            title="Push Notifications"
+                            description={pushEnabled ? "Enabled" : "Disabled (Tap to fix)"}
+                            onPress={() => Linking.openSettings()}
+                        />
+                        <View className="h-[1px] bg-border/30 mx-4" />
                         <ProfileMenuItem 
                             icon={<HelpCircle size={20} className="text-purple-500" />}
                             title="Help Center"
@@ -182,7 +201,7 @@ export default function ProfileScreen({ navigation }: { navigation: NativeStackN
                     </View>
                 </View>
                 
-                <Text className="text-center text-[10px] text-muted-foreground uppercase tracking-tighter opacity-50 mt-4">
+                <Text className="text-center text-[10px] text-muted-foreground uppercase tracking-tighter opacity-50 mt-6">
                     App Version 1.0.0 • Roda Arka Workshop
                 </Text>
             </View>

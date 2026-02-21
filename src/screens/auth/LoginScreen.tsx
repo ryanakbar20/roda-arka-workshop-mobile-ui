@@ -122,7 +122,10 @@ export default function LoginScreen({ navigation }: { navigation: NativeStackNav
         className="flex-1"
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
-        <ScrollView contentContainerClassName="flex-grow justify-center p-6">
+        <ScrollView 
+          contentContainerClassName="flex-grow justify-center p-6"
+          keyboardShouldPersistTaps="handled"
+        >
           <View className="mb-6 items-center">
             {/* Logo Placeholder */}
             <Image 
