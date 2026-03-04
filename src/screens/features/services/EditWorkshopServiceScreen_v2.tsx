@@ -138,7 +138,7 @@ export default function EditWorkshopServiceScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
       <View className="px-6 py-4 flex-row items-center justify-between">
         <View className="flex-row items-center">
             <TouchableOpacity onPress={() => navigation.goBack()} className="p-2 -ml-2 rounded-full active:bg-muted/10">

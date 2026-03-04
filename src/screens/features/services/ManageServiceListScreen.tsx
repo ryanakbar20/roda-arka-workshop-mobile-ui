@@ -82,7 +82,7 @@ export default function ManageServiceListScreen() {
   });
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
       {/* Header */}
       <View className="px-5 py-3 border-b border-border/50 bg-background flex-row justify-between items-center">
         <Text className="text-xl font-bold text-foreground">Manage Services</Text>

@@ -278,7 +278,7 @@ export default function RegisterScreen({ navigation }: { navigation: NativeStack
 
   if (showSuccess) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }} edges={['top', 'left', 'right']}>
         <CheckCircle2 size={80} className="text-green-600 mb-6" />
         <Text className="text-2xl font-bold text-foreground mb-2">Check Your Email!</Text>
         <Text className="text-center text-muted-foreground mb-8 px-4">
@@ -304,7 +304,7 @@ export default function RegisterScreen({ navigation }: { navigation: NativeStack
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} edges={['top', 'left', 'right']}>
       <View className="px-4 py-2 border-b border-border/50 flex-row items-center justify-between">
         <View className="flex-row items-center">
           <TouchableOpacity onPress={() => currentStep === 2 ? prevStep() : navigation.goBack()} className="p-2 -ml-2" disabled={loading}>

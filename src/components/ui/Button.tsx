@@ -50,10 +50,13 @@ export const Button = ({
         variants[variant], 
         sizes[size], 
         className,
-        (loading || disabled) && "opacity-50 pointer-events-none"
       )}
       disabled={loading || disabled}
       activeOpacity={0.8}
+      style={{
+        opacity: (loading || disabled) ? 0.5 : 1,
+        pointerEvents: (loading || disabled) ? "none" : "auto",
+      }}
       {...props}
     >
       {loading ? (

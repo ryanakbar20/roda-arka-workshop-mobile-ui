@@ -79,7 +79,7 @@ export default function ProfileScreen({ navigation }: { navigation: NativeStackN
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} edges={['top', 'left', 'right']}>
         <ScrollView className="flex-1" contentContainerClassName="pb-10">
             {/* Header */}
             <View className="px-6 py-4 flex-row justify-between items-center">

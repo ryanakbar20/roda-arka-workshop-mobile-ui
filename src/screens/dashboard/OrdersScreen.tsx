@@ -121,7 +121,7 @@ export default function OrdersScreen({ navigation }: { navigation: NativeStackNa
 
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} edges={['top']}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} edges={['top', 'left', 'right']}>
              <View style={{ paddingHorizontal: 24, paddingVertical: 16, backgroundColor: 'white' }}>
                 <Text className="text-2xl font-bold text-foreground mb-4">Orders</Text>
                 <View style={{ flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.05)', padding: 4, borderRadius: 16 }}>

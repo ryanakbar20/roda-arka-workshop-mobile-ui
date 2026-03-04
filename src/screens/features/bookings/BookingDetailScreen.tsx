@@ -193,7 +193,7 @@ export default function BookingDetailScreen() {
   // but we display whatever is there.
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
        <View className="px-4 py-2 border-b border-border/50 flex-row items-center bg-background z-10">
         <TouchableOpacity onPress={() => navigation.goBack()} className="p-2 -ml-2">
             <ChevronLeft size={24} className="text-foreground" />

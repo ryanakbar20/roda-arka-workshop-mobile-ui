@@ -95,7 +95,7 @@ export default function InvoiceListScreen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+        <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
              <View className="px-5 py-4 border-b border-border/50 bg-background">
                 <Text className="text-2xl font-bold text-foreground">Invoices</Text>
             </View>

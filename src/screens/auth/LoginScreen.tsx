@@ -15,7 +15,7 @@ import { AuthStackParamList } from "../../navigation/types";
 // Schema Validation
 const loginSchema = z.object({
   emailOrPhone: z.string().min(1, "Email or Phone is required"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(1, "Password is required").min(6, "Password must be at least 6 characters"),
 });
 
 type LoginSchema = z.infer<typeof loginSchema>;
@@ -27,6 +27,7 @@ export default function LoginScreen({ navigation }: { navigation: NativeStackNav
   const {
     control,
     handleSubmit,
+    clearErrors,
     formState: { errors },
   } = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
@@ -116,7 +117,7 @@ export default function LoginScreen({ navigation }: { navigation: NativeStackNav
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView 
         behavior={Platform.OS === "ios" ? "padding" : "padding"}
         className="flex-1"
@@ -148,7 +149,10 @@ export default function LoginScreen({ navigation }: { navigation: NativeStackNav
                     label="Email or Phone Number"
                     placeholder="name@example.com"
                     onBlur={onBlur}
-                    onChangeText={onChange}
+                    onChangeText={(val) => {
+                        clearErrors("emailOrPhone");
+                        onChange(val);
+                    }}
                     value={value}
                     error={errors.emailOrPhone?.message}
                     autoCapitalize="none"
@@ -165,7 +169,10 @@ export default function LoginScreen({ navigation }: { navigation: NativeStackNav
                     placeholder="Enter your password"
                     secureTextEntry
                     onBlur={onBlur}
-                    onChangeText={onChange}
+                    onChangeText={(val) => {
+                        clearErrors("password");
+                        onChange(val);
+                    }}
                     value={value}
                     error={errors.password?.message}
                   />

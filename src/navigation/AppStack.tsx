@@ -12,6 +12,7 @@ import { getWorkshopId } from '../lib/utils';
 import { Platform } from 'react-native';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
+import { PermissionModal } from '../components/ui/PermissionModal';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -93,16 +94,27 @@ export default function AppStack() {
     return () => { supabase.removeChannel(channel); };
   }, [currentUserId]);
 
-  useEffect(() => {
-    registerForPushNotificationsAsync().then(token => {
+  const handlePermissionsGranted = () => {
+    if (!currentUserId) return;
+    
+    registerForPushNotificationsAsync().then(async (token) => {
       if (token) {
         console.log("Expo Push Token:", token);
-        // Note: In a future iteration, save this to the backend `users` or `push_tokens` table.
+        try {
+            await supabase
+                .from('profiles')
+                .update({ push_token: token })
+                .eq('user_id', currentUserId);
+        } catch (e) {
+            console.error("Failed to save push token to profile:", e);
+        }
       }
     });
-  }, []);
+  };
 
   return (
+    <>
+    <PermissionModal onPermissionsGranted={handlePermissionsGranted} />
     <Tab.Navigator
         screenOptions={{
             headerShown: false,
@@ -144,6 +156,7 @@ export default function AppStack() {
         }}
       />
     </Tab.Navigator>
+    </>
   );
 }
 

@@ -188,7 +188,7 @@ export default function ManageWorkshopServicesScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
       <View className="px-6 py-4 flex-row items-center">
         <TouchableOpacity onPress={() => navigation.goBack()} className="p-2 -ml-2 rounded-full active:bg-muted/10">
           <ChevronLeft size={24} className="text-foreground" />

@@ -14,6 +14,7 @@ import { AudioPlayer } from "../../../components/chat/AudioPlayer";
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
+import { useHeaderHeight } from '@react-navigation/elements';
 
 type ChatDetailRouteProp = RouteProp<HomeStackParamList, "ChatDetail">;
 
@@ -24,6 +25,7 @@ export default function ChatDetailScreen() {
     const navigation = useNavigation();
     const route = useRoute<ChatDetailRouteProp>();
     const insets = useSafeAreaInsets();
+    const headerHeight = useHeaderHeight();
     
     if (!route.params) return null;
     const { chatId, customerName, avatarUrl } = route.params;
@@ -413,8 +415,8 @@ export default function ChatDetailScreen() {
             </View>
 
             <KeyboardAvoidingView 
-                behavior={Platform.OS === "ios" ? "padding" : "padding"}
-                keyboardVerticalOffset={0}
+                behavior={Platform.OS === 'ios' ? 'padding' : "padding"} 
+                keyboardVerticalOffset={Platform.OS === 'ios' ? headerHeight : 0}
                 className="flex-1"
             >
                 <FlatList
@@ -427,8 +429,8 @@ export default function ChatDetailScreen() {
                 />
 
                 <View 
-                    style={{ paddingBottom: Math.max(insets.bottom, 16) }}
-                    className="p-4 bg-background border-t border-border/30"
+                    style={{ paddingBottom: Math.max(insets.bottom, 0) }}
+                    className="px-3 pt-2 bg-background border-t border-border/30"
                 >
                     <View className="flex-row items-end gap-2">
                         <View className="flex-1 flex-row items-center bg-muted/40 rounded-[24px] px-3 py-1 border border-border/40 min-h-[48px]">
@@ -500,7 +502,10 @@ export default function ChatDetailScreen() {
                          </View>
                      )}
 
-                     <View className="absolute bottom-10 flex-row gap-4 px-6 w-full justify-center">
+                     <View 
+                         style={{ bottom: Math.max(insets.bottom + 20, 40) }}
+                         className="absolute flex-row gap-4 px-6 w-full justify-center"
+                     >
                          <TouchableOpacity 
                              onPress={() => setPreviewFile(null)}
                              className="flex-1 bg-white/20 py-4 rounded-xl items-center"

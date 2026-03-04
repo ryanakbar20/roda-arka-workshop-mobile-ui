@@ -119,7 +119,7 @@ export default function ServiceDetailScreen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+        <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
             <View className="px-4 py-3 border-b border-border/50 flex-row items-center justify-between bg-background">
                  <View className="flex-row items-center">
                     <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">

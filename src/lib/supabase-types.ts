@@ -499,6 +499,7 @@ export type Database = {
           id: string
           is_premium: boolean | null
           phone: string | null
+          push_token: string | null
           updated_at: string
           user_id: string
         }
@@ -510,6 +511,7 @@ export type Database = {
           id?: string
           is_premium?: boolean | null
           phone?: string | null
+          push_token?: string | null
           updated_at?: string
           user_id: string
         }
@@ -521,6 +523,7 @@ export type Database = {
           id?: string
           is_premium?: boolean | null
           phone?: string | null
+          push_token?: string | null
           updated_at?: string
           user_id?: string
         }

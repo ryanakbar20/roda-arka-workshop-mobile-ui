@@ -135,7 +135,7 @@ export default function ManageMechanicsListScreen() {
     );
 
     return (
-        <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+        <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
              <View className="px-5 py-3 border-b border-border/50 bg-background flex-row justify-between items-center">
                 <View className="flex-row items-center">
                     <TouchableOpacity onPress={() => navigation.goBack()} className="mr-2">
