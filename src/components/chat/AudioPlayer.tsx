@@ -1,94 +1,87 @@
-import React from 'react';
-import { View, TouchableOpacity, Text, NativeModules } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Play, Pause } from 'lucide-react-native';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
-import { Play, Pause, CircleOff } from 'lucide-react-native';
 import { cn } from '../../lib/utils';
 
 interface AudioPlayerProps {
-    uri: string;
-    isPending?: boolean;
+  uri: string;
+  isMe?: boolean;
 }
 
-// Check if the native module is available
-const isAudioAvailable = !!NativeModules.ExpoAudio;
+export function AudioPlayer({ uri, isMe = false }: AudioPlayerProps) {
+  const player = useAudioPlayer(uri, {
+    downloadFirst: true,
+  });
+  const status = useAudioPlayerStatus(player);
+  const [error, setError] = useState<string | null>(null);
 
-export const AudioPlayer = (props: AudioPlayerProps) => {
-    if (!isAudioAvailable) {
-        return (
-            <View className="flex-row items-center bg-muted/20 p-2 rounded-lg min-w-[150px] opacity-60">
-                <CircleOff size={16} className="text-muted-foreground mr-2" />
-                <Text className="text-[10px] text-muted-foreground font-medium">Audio not supported</Text>
-            </View>
-        );
+  const togglePlayback = () => {
+    if (status.playing) {
+      player.pause();
+    } else {
+      if (status.currentTime >= status.duration - 0.1) {
+        player.seekTo(0);
+      }
+      player.play();
     }
-    return <AudioPlayerInternal {...props} />;
-};
+  };
 
-const AudioPlayerInternal = ({ uri, isPending }: AudioPlayerProps) => {
-    const player = useAudioPlayer(
-        uri,
-        uri.startsWith('http') ? { downloadFirst: true } : undefined
-    );
-    const status = useAudioPlayerStatus(player);
-    
-    const isPlaying = status.playing;
-    const duration = status.duration;
-    const position = status.currentTime;
+  const formatTime = (seconds: number) => {
+    const min = Math.floor(seconds / 60);
+    const sec = Math.floor(seconds % 60);
+    return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+  };
 
-    const togglePlay = () => {
-        if (isPending) return;
-        if (isPlaying) {
-            player.pause();
-        } else {
-            // Give a 0.5s tolerance to handle floating point duration vs position
-            const threshold = (duration || 1) - 0.5;
-            if (position > 0 && position >= threshold) {
-                 player.seekTo(0);
-                 player.play();
-            } else {
-                player.play();
-            }
-        }
-    };
-
-    const formatTime = (seconds: number) => {
-        if (typeof seconds !== 'number' || !Number.isFinite(seconds) || seconds < 0) return "0:00";
-        const totalSeconds = Math.floor(seconds);
-        const mins = Math.floor(totalSeconds / 60);
-        const secs = totalSeconds % 60;
-        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-    };
-
+  if (error) {
     return (
-        <View className={cn("flex-row items-center bg-muted/20 p-2 rounded-lg min-w-[150px]", isPending && "opacity-50")}>
-            <TouchableOpacity 
-                onPress={togglePlay} 
-                className="w-8 h-8 rounded-full bg-primary/20 items-center justify-center mr-3"
-                disabled={isPending}
-            >
-                {isPlaying ? (
-                    <Pause size={16} className="text-primary" fill="currentColor" />
-                ) : (
-                    <Play size={16} className="text-primary" fill="currentColor" />
-                )}
-            </TouchableOpacity>
-            
-            <View className="flex-1">
-                 <View className="h-1 bg-muted rounded overflow-hidden mb-1">
-                     <View 
-                        className="h-full bg-primary" 
-                        style={{ width: `${(position / (duration || 1)) * 100}%` }} 
-                     />
-                 </View>
-                 <View className="flex-row justify-between">
-                     <Text className="text-[10px] text-muted-foreground font-medium">
-                         {formatTime(position)}
-                     </Text>
-                     <Text className="text-[10px] text-muted-foreground font-medium">
-                         -{formatTime(Math.max(0, duration - position))}
-                     </Text>
-                 </View>
-            </View>
-        </View>
+      <View className={cn("flex-row items-center p-2 rounded-xl", isMe ? "bg-red-900/20" : "bg-red-50")}>
+        <Text className={cn("text-xs", isMe ? "text-white" : "text-red-500")}>Gagal memutar audio</Text>
+      </View>
     );
-};
+  }
+
+  const accentColor = isMe ? "#fff" : "#6090ffff";
+  const trackColor = isMe ? "rgba(255,255,255,0.2)" : "#6090ffff";
+  const progressColor = isMe ? "#fff" : "#6090ffff";
+
+  return (
+    <View className="flex-row items-center gap-3 min-w-[200px] py-1">
+      <TouchableOpacity 
+        onPress={togglePlayback}
+        className={cn(
+            "w-10 h-10 rounded-full items-center justify-center", 
+            isMe ? "bg-white/20" : "bg-primary/10"
+        )}
+      >
+        {status.isBuffering ? (
+          <ActivityIndicator size="small" color={accentColor} />
+        ) : status.playing ? (
+          <Pause size={18} color={accentColor} fill={accentColor} />
+        ) : (
+          <Play size={18} color={accentColor} fill={accentColor} className="ml-0.5" />
+        )}
+      </TouchableOpacity>
+      
+      <View className="flex-1">
+        <View style={{ backgroundColor: trackColor }} className="h-1.5 rounded-full overflow-hidden">
+          <View 
+            style={{ 
+              width: `${status.duration > 0 ? (status.currentTime / status.duration) * 100 : 0}%`,
+              backgroundColor: progressColor
+            }} 
+            className="h-full" 
+          />
+        </View>
+        <View className="flex-row justify-between mt-1.5">
+          <Text className={cn("text-[9px] font-bold uppercase tracking-widest", isMe ? "text-primary-foreground/60" : "text-muted-foreground/60")}>
+            {formatTime(status.currentTime)}
+          </Text>
+          <Text className={cn("text-[9px] font-bold uppercase tracking-widest", isMe ? "text-primary-foreground/60" : "text-muted-foreground/60")}>
+            {formatTime(status.duration)}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+}
